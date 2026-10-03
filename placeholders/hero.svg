@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">主視覺素材待補</title>
+  <desc id="desc">此處將替換為正式 Hero 圖片</desc>
+  <rect width="1200" height="760" fill="#f3eddf"/>
+  <rect x="48" y="48" width="1104" height="664" rx="28" fill="none" stroke="#a8b497" stroke-width="6" stroke-dasharray="18 16"/>
+  <path d="M430 455l120-126 86 82 67-70 145 146H430z" fill="#d8dfcc" stroke="#617259" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="715" cy="282" r="38" fill="#d7b66c"/>
+  <text x="600" y="570" text-anchor="middle" fill="#41523d" font-family="sans-serif" font-size="44" font-weight="700">主視覺素材待補</text>
+  <text x="600" y="624" text-anchor="middle" fill="#6c7568" font-family="sans-serif" font-size="25">正式圖片到位後直接替換</text>
+</svg>

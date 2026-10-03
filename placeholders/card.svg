@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 420" role="img" aria-labelledby="title desc">
+  <title id="title">數轉主圖待補</title>
+  <desc id="desc">此處將替換為正式數轉圖片</desc>
+  <rect width="560" height="420" rx="24" fill="#f4efe4"/>
+  <rect x="26" y="26" width="508" height="368" rx="18" fill="none" stroke="#a9b39a" stroke-width="4" stroke-dasharray="12 10"/>
+  <rect x="190" y="104" width="180" height="150" rx="14" fill="#dce2d2"/>
+  <path d="M222 221l50-55 38 37 30-31v49H222z" fill="#71816a"/>
+  <text x="280" y="320" text-anchor="middle" fill="#465543" font-family="sans-serif" font-size="29" font-weight="700">數轉主圖待補</text>
+</svg>
