@@ -1,0 +1,21 @@
+{
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Jiliguala Methods",
+        "supportEmail": "guocheju@gmail.com",
+        "authorizedRedirectUris": [
+          "https://jiliguala-methods.vercel.app",
+          "http://localhost:4173"
+        ]
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-east1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
