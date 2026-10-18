@@ -276,6 +276,24 @@
           <div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div>
           <p id="progress-copy">完成任一方法後，這裡會開始記錄進度。</p>
         </section>
+        <section class="daily-task" aria-labelledby="daily-task-title">
+          <div class="daily-task-copy">
+            <small>今日學習任務</small>
+            <h3 id="daily-task-title">正在安排今天的方法…</h3>
+            <p id="daily-task-description">每天完成一個小方法，建立自己的學習節奏。</p>
+          </div>
+          <button class="button button-primary" id="daily-task-action" type="button">開始今日任務 →</button>
+        </section>
+        <section class="learning-visuals" aria-label="學習進度圖表">
+          <div class="visual-panel">
+            <div class="learning-panel-title"><h3>最近 7 天</h3><span><strong id="streak-count">0</strong> 天連續學習</span></div>
+            <div class="weekly-chart" id="weekly-chart"></div>
+          </div>
+          <div class="visual-panel">
+            <div class="learning-panel-title"><h3>方法類別進度</h3><span>完成種類</span></div>
+            <div class="category-progress" id="category-progress"></div>
+          </div>
+        </section>
         <div class="learning-center-grid">
           <section class="learning-panel">
             <div class="learning-panel-title"><h3>收藏方法</h3><span id="favorite-summary">0 項</span></div>
@@ -295,6 +313,7 @@
           </section>
         </div>
         <p class="member-note">收藏、筆記與練習紀錄已安全同步到 Firebase。</p>
+        <a class="button admin-link" id="admin-link" href="../admin/" hidden>進入內容管理後台 →</a>
         <button class="button button-quiet sign-out-button" id="sign-out" type="button">登出</button>
       </section>
     </dialog>

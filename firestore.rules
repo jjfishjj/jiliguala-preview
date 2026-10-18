@@ -6,6 +6,23 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'guocheju@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    match /methods/{methodId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow read: if owns(adminId) || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
     match /users/{userId} {
       allow create, read, update: if owns(userId);
       allow delete: if false;
@@ -25,6 +42,15 @@ service cloud.firestore {
 
       match /notes/{methodId} {
         allow read, create, update, delete: if owns(userId);
+      }
+
+      match /daily/{date} {
+        allow read, create, update, delete: if owns(userId);
+      }
+
+      match /activity/{date} {
+        allow read, create, update: if owns(userId);
+        allow delete: if false;
       }
     }
 

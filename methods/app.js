@@ -1,4 +1,4 @@
-const methods = [
+let methods = [
   { id: "scene-hook", title: "情境鉤子卡", category: "remember", sense: ["visual", "doing"], time: 7, desc: "把內容放進真實場景，再關掉提示回想。", tags: ["單字", "概念", "情境"], output: "一段情境對話＋一個可回想場景", steps: ["選一個今天要記住的小內容。", "替它安排一個熟悉地點、人物和事件。", "移開原文，只看場景把內容說回來。"] },
   { id: "table", title: "資料轉表格訓練", category: "understand", sense: ["reading", "visual"], time: 8, desc: "把雜亂資料整理成欄位、分類、規則與摘要。", tags: ["筆記", "分類", "摘要"], output: "一張清楚表格＋一段學習摘要", steps: ["圈出重複出現的資訊類型。", "把類型變成欄位，將內容放入對應位置。", "用一句話說出表格顯示的規則。"] },
   { id: "shadowing", title: "聲音跟讀卡", category: "express", sense: ["auditory"], time: 6, desc: "用節奏、重音和遮稿複述建立音韻記憶。", tags: ["口說", "語言", "節奏"], output: "三輪：純聽 → 跟讀 → 遮稿複述", steps: ["不看文字，完整聽一次。", "跟著聲音同步模仿語調與停頓。", "關掉聲音與文字，自己說一次。"] },
@@ -169,5 +169,15 @@ window.addEventListener("jiliguala:method-state", event => {
 });
 
 window.addEventListener("jiliguala:open-method", event => openMethod(event.detail));
+
+window.addEventListener("jiliguala:catalog-loaded", event => {
+  if (!Array.isArray(event.detail) || !event.detail.length) return;
+  methods = event.detail;
+  window.JILIGUALA_METHODS = methods;
+  render();
+});
+
+window.JILIGUALA_DEFAULT_METHODS = methods.map(method => ({ ...method }));
+window.JILIGUALA_METHODS = methods;
 
 render();

@@ -5,6 +5,7 @@
 - Keep the existing brand homepage, course pages, testimonials, and legacy public pages working.
 - The learning-method library lives in `methods/`.
 - Firebase Authentication and Firestore behavior lives in `methods/firebase-app.js`; access rules live in `firestore.rules`.
+- The content management interface lives in `admin/`. Method documents in Firestore override the built-in catalog; setting `published` to `false` hides a built-in method.
 - Do not commit `.env*`, `.vercel/`, Firebase CLI credentials, or service-account keys.
 
 ## Before pushing
@@ -14,6 +15,7 @@ Run these checks from the repository root:
 ```sh
 node --check methods/app.js
 node --check methods/firebase-app.js
+node --check admin/app.js
 git diff --check
 ```
 

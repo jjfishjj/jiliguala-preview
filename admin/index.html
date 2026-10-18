@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="記理呱啦學習方法內容管理後台" />
+    <title>內容管理後台｜記理呱啦</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="admin-header">
+      <a href="../" class="brand"><img src="../brand/logo.png" alt="" /><span>記理呱啦</span></a>
+      <a href="../methods/">查看方法頁 →</a>
+    </header>
+    <main>
+      <section class="login-card" id="login-view">
+        <small>JILIGUALA ADMIN</small>
+        <h1>內容管理後台</h1>
+        <p>使用管理員帳號登入後，即可新增、編輯、排序與上下架學習方法。</p>
+        <button id="google-login" type="button">使用 Google 管理員帳號登入</button>
+        <div class="divider"><span>或使用 Email</span></div>
+        <form id="email-login">
+          <label>Email<input id="email" type="email" autocomplete="email" required /></label>
+          <label>密碼<input id="password" type="password" autocomplete="current-password" required /></label>
+          <button type="submit">登入</button>
+        </form>
+        <p class="message" id="login-message" aria-live="polite"></p>
+      </section>
+
+      <section class="admin-shell" id="admin-view" hidden>
+        <div class="admin-intro">
+          <div><small>內容管理</small><h1>學習方法</h1><p id="admin-identity"></p></div>
+          <div class="header-actions">
+            <button class="secondary" id="seed-methods" type="button">匯入現有 23 種方法</button>
+            <button class="secondary" id="logout" type="button">登出</button>
+          </div>
+        </div>
+        <div class="workspace">
+          <form class="method-form" id="method-form">
+            <div class="form-title"><h2 id="form-heading">新增方法</h2><button class="text-button" id="reset-form" type="button">清空</button></div>
+            <label>方法 ID<input id="method-id" pattern="[a-z0-9-]+" placeholder="例如 memory-map" required /></label>
+            <label>名稱<input id="method-title" maxlength="80" required /></label>
+            <div class="form-row">
+              <label>分類<select id="method-category"><option value="remember">記得住</option><option value="understand">想得懂</option><option value="express">說得出</option><option value="improve">改得好</option></select></label>
+              <label>時間（分鐘）<input id="method-time" type="number" min="1" max="60" value="7" required /></label>
+              <label>排序<input id="method-order" type="number" min="0" value="100" required /></label>
+            </div>
+            <label>簡介<textarea id="method-desc" rows="3" maxlength="240" required></textarea></label>
+            <label>標籤（逗號分隔）<input id="method-tags" placeholder="單字, 記憶, 情境" /></label>
+            <fieldset><legend>學習入口</legend><label><input type="checkbox" name="sense" value="visual" /> 看圖記</label><label><input type="checkbox" name="sense" value="auditory" /> 聽聲記</label><label><input type="checkbox" name="sense" value="reading" /> 讀寫記</label><label><input type="checkbox" name="sense" value="doing" /> 動手記</label></fieldset>
+            <label>完成成果<input id="method-output" maxlength="160" required /></label>
+            <label>練習步驟（每行一步）<textarea id="method-steps" rows="5" required></textarea></label>
+            <label class="publish-toggle"><input id="method-published" type="checkbox" checked /> 上架此方法</label>
+            <button class="primary" type="submit">儲存方法</button>
+            <p class="message" id="form-message" aria-live="polite"></p>
+          </form>
+          <section class="method-library">
+            <div class="library-head"><h2>方法清單</h2><span id="method-total">0 種</span></div>
+            <div class="method-list" id="method-list"><p class="empty">尚未建立方法。</p></div>
+          </section>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
