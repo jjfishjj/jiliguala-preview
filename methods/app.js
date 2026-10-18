@@ -69,7 +69,7 @@ function openMethod(id) {
   </div><div class="dialog-body"><h3>跟著做一次</h3><ol>${method.steps.map(step => `<li>${step}</li>`).join("")}</ol>
     <div class="dialog-output"><small>完成時，你會得到</small><strong>${method.output}</strong></div>
     <p class="method-tags">${method.sense.map(sense => `<span>${senseNames[sense]}</span>`).join("")}</p>
-    <div class="dialog-actions"><button class="button button-primary" type="button" data-complete-method="${method.id}">完成一次練習 <span>✓</span></button><a class="button button-quiet" href="https://jjfishjj.github.io/fluent-ai/practice">前往 Fluent AI <span>↗</span></a></div></div>`;
+    <div class="dialog-actions"><button class="button button-primary" type="button" data-complete-method="${method.id}">完成一次練習 <span>✓</span></button></div></div>`;
   dialog.showModal();
 }
 
