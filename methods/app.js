@@ -29,6 +29,7 @@ const senseNames = { visual: "看圖記", auditory: "聽聲記", reading: "讀�
 let activeFilter = "all";
 let activeSense = null;
 let favoriteIds = new Set();
+let openMethodId = null;
 
 const grid = document.querySelector("#method-grid");
 const count = document.querySelector("#result-count");
@@ -60,17 +61,42 @@ function render() {
   empty.hidden = visible.length !== 0;
 }
 
+function recommendNext(method) {
+  return methods
+    .filter(item => item.id !== method.id)
+    .map((item, index) => ({
+      item,
+      index,
+      score: (item.category === method.category ? 3 : 0)
+        + item.sense.filter(sense => method.sense.includes(sense)).length
+    }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)[0]?.item;
+}
+
 function openMethod(id) {
   const method = methods.find(item => item.id === id);
   if (!method) return;
+  const recommendation = recommendNext(method);
+  openMethodId = method.id;
   dialogContent.innerHTML = `<div class="dialog-head">
     <span class="category-pill">${categoryNames[method.category]} · 約 ${method.time} 分鐘</span>
     <h2>${method.title}</h2><p>${method.desc}</p>
   </div><div class="dialog-body"><h3>跟著做一次</h3><ol>${method.steps.map(step => `<li>${step}</li>`).join("")}</ol>
     <div class="dialog-output"><small>完成時，你會得到</small><strong>${method.output}</strong></div>
     <p class="method-tags">${method.sense.map(sense => `<span>${senseNames[sense]}</span>`).join("")}</p>
-    <div class="dialog-actions"><button class="button button-primary" type="button" data-complete-method="${method.id}">完成一次練習 <span>✓</span></button></div></div>`;
-  dialog.showModal();
+    <div class="dialog-actions">
+      <button class="button button-primary" type="button" data-complete-method="${method.id}">完成一次練習 <span>✓</span></button>
+      <button class="button button-quiet later-button" type="button" data-practice-later="${method.id}" aria-pressed="false">稍後練習 <span>＋</span></button>
+    </div>
+    <section class="method-note-panel" aria-labelledby="method-note-title">
+      <div><h3 id="method-note-title">個人筆記</h3><small id="method-note-status">登入後可跨裝置保存</small></div>
+      <textarea id="method-note" rows="4" maxlength="1200" placeholder="記下這個方法適合用在哪裡、下次要怎麼練…"></textarea>
+      <button class="button note-save-button" type="button" data-save-note="${method.id}">儲存筆記</button>
+    </section>
+    ${recommendation ? `<section class="next-method-panel"><small>下一個推薦方法</small><h3>${recommendation.title}</h3><p>${recommendation.desc}</p><button class="text-button" type="button" data-open-method="${recommendation.id}">接著看這張方法卡 <span>→</span></button></section>` : ""}
+  </div>`;
+  if (!dialog.open) dialog.showModal();
+  window.dispatchEvent(new CustomEvent("jiliguala:method-opened", { detail: method }));
 }
 
 document.addEventListener("click", event => {
@@ -85,6 +111,17 @@ document.addEventListener("click", event => {
   if (completeButton) {
     const method = methods.find(item => item.id === completeButton.dataset.completeMethod);
     window.dispatchEvent(new CustomEvent("jiliguala:practice", { detail: method }));
+  }
+  const laterButton = event.target.closest("[data-practice-later]");
+  if (laterButton) {
+    const method = methods.find(item => item.id === laterButton.dataset.practiceLater);
+    window.dispatchEvent(new CustomEvent("jiliguala:later", { detail: method }));
+  }
+  const noteButton = event.target.closest("[data-save-note]");
+  if (noteButton) {
+    const method = methods.find(item => item.id === noteButton.dataset.saveNote);
+    const content = document.querySelector("#method-note")?.value || "";
+    window.dispatchEvent(new CustomEvent("jiliguala:note", { detail: { method, content } }));
   }
 });
 
@@ -116,5 +153,21 @@ window.addEventListener("jiliguala:favorites-updated", event => {
   favoriteIds = new Set(event.detail || []);
   render();
 });
+
+window.addEventListener("jiliguala:method-state", event => {
+  if (event.detail?.id !== openMethodId) return;
+  const note = document.querySelector("#method-note");
+  const status = document.querySelector("#method-note-status");
+  const laterButton = document.querySelector("[data-practice-later]");
+  if (note) note.value = event.detail.note || "";
+  if (status) status.textContent = event.detail.signedIn ? "已與會員帳號同步" : "登入後可跨裝置保存";
+  if (laterButton) {
+    laterButton.classList.toggle("active", Boolean(event.detail.savedForLater));
+    laterButton.setAttribute("aria-pressed", String(Boolean(event.detail.savedForLater)));
+    laterButton.innerHTML = event.detail.savedForLater ? "已加入稍後練習 <span>✓</span>" : "稍後練習 <span>＋</span>";
+  }
+});
+
+window.addEventListener("jiliguala:open-method", event => openMethod(event.detail));
 
 render();

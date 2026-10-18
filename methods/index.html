@@ -263,13 +263,38 @@
       <section class="auth-view member-view" id="signed-in-view" hidden>
         <div class="member-profile">
           <span class="member-avatar" id="member-avatar">人</span>
-          <div><small>歡迎回來</small><h2 id="member-name">學習者</h2><p id="member-email"></p></div>
+          <div><small>會員學習中心</small><h2 id="member-name">學習者</h2><p id="member-email"></p></div>
         </div>
         <div class="member-stats">
           <div><strong id="favorite-count">0</strong><span>收藏方法</span></div>
           <div><strong id="practice-count">0</strong><span>完成練習</span></div>
+          <div><strong id="later-count">0</strong><span>稍後練習</span></div>
+          <div><strong id="note-count">0</strong><span>個人筆記</span></div>
         </div>
-        <p class="member-note">你的收藏與練習紀錄已安全同步到 Firebase。</p>
+        <section class="progress-panel" aria-labelledby="progress-title">
+          <div><h3 id="progress-title">方法探索進度</h3><strong id="progress-percent">0%</strong></div>
+          <div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div>
+          <p id="progress-copy">完成任一方法後，這裡會開始記錄進度。</p>
+        </section>
+        <div class="learning-center-grid">
+          <section class="learning-panel">
+            <div class="learning-panel-title"><h3>收藏方法</h3><span id="favorite-summary">0 項</span></div>
+            <div class="learning-list" id="favorite-list"><p class="learning-empty">還沒有收藏的方法。</p></div>
+          </section>
+          <section class="learning-panel">
+            <div class="learning-panel-title"><h3>稍後練習</h3><span id="later-summary">0 項</span></div>
+            <div class="learning-list" id="later-list"><p class="learning-empty">還沒有待練習的方法。</p></div>
+          </section>
+          <section class="learning-panel">
+            <div class="learning-panel-title"><h3>最近練習</h3><span>最近 3 筆</span></div>
+            <div class="learning-list" id="recent-practice-list"><p class="learning-empty">完成方法後會顯示在這裡。</p></div>
+          </section>
+          <section class="learning-panel learning-panel-wide">
+            <div class="learning-panel-title"><h3>最近筆記</h3><span>點選可繼續編輯</span></div>
+            <div class="learning-list" id="notes-list"><p class="learning-empty">你的方法筆記會顯示在這裡。</p></div>
+          </section>
+        </div>
+        <p class="member-note">收藏、筆記與練習紀錄已安全同步到 Firebase。</p>
         <button class="button button-quiet sign-out-button" id="sign-out" type="button">登出</button>
       </section>
     </dialog>

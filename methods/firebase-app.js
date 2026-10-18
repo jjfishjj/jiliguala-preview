@@ -40,6 +40,12 @@ let currentUser = null;
 let auth;
 let db;
 let toastTimer;
+const categoryLabels = {
+  remember: "記得住",
+  understand: "想得懂",
+  express: "說得出",
+  improve: "改得好"
+};
 
 function showToast(message) {
   clearTimeout(toastTimer);
@@ -88,19 +94,85 @@ async function ensureProfile(user) {
   }, { merge: true });
 }
 
+function dateLabel(timestamp) {
+  if (!timestamp?.toDate) return "剛剛更新";
+  return new Intl.DateTimeFormat("zh-TW", { month: "numeric", day: "numeric" }).format(timestamp.toDate());
+}
+
+function timestampValue(timestamp) {
+  return timestamp?.toMillis?.() || 0;
+}
+
+function renderLearningList(selector, items, emptyText, detailFor) {
+  const list = document.querySelector(selector);
+  list.replaceChildren();
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "learning-empty";
+    empty.textContent = emptyText;
+    list.append(empty);
+    return;
+  }
+  items.slice(0, 3).forEach(item => {
+    const button = document.createElement("button");
+    button.className = "learning-item";
+    button.type = "button";
+    button.dataset.dashboardMethod = item.id;
+    const title = document.createElement("strong");
+    title.textContent = item.data.title || item.id;
+    const detail = document.createElement("small");
+    detail.textContent = detailFor(item.data);
+    const arrow = document.createElement("span");
+    arrow.textContent = "→";
+    button.append(title, detail, arrow);
+    list.append(button);
+  });
+}
+
 async function loadMemberData(user) {
-  const favoritesSnapshot = await getDocs(collection(db, "users", user.uid, "favorites"));
-  const favorites = favoritesSnapshot.docs.map(item => item.id);
+  const [favoritesSnapshot, laterSnapshot, practiceSnapshot, notesSnapshot, profile] = await Promise.all([
+    getDocs(collection(db, "users", user.uid, "favorites")),
+    getDocs(collection(db, "users", user.uid, "later")),
+    getDocs(collection(db, "users", user.uid, "practice")),
+    getDocs(collection(db, "users", user.uid, "notes")),
+    getDoc(doc(db, "users", user.uid))
+  ]);
+  const favoriteItems = favoritesSnapshot.docs.map(item => ({ id: item.id, data: item.data() }))
+    .sort((a, b) => timestampValue(b.data.savedAt) - timestampValue(a.data.savedAt));
+  const favorites = favoriteItems.map(item => item.id);
+  const later = laterSnapshot.docs.map(item => ({ id: item.id, data: item.data() }))
+    .sort((a, b) => timestampValue(b.data.savedAt) - timestampValue(a.data.savedAt));
+  const practice = practiceSnapshot.docs.map(item => ({ id: item.id, data: item.data() }))
+    .sort((a, b) => timestampValue(b.data.lastCompletedAt) - timestampValue(a.data.lastCompletedAt));
+  const notes = notesSnapshot.docs.map(item => ({ id: item.id, data: item.data() }))
+    .sort((a, b) => timestampValue(b.data.updatedAt) - timestampValue(a.data.updatedAt));
+  const practiceCount = profile.data()?.practiceCount || 0;
+  const progress = Math.min(100, Math.round((practice.length / 23) * 100));
+
   window.dispatchEvent(new CustomEvent("jiliguala:favorites-updated", { detail: favorites }));
   document.querySelector("#favorite-count").textContent = favorites.length;
-  const profile = await getDoc(doc(db, "users", user.uid));
-  document.querySelector("#practice-count").textContent = profile.data()?.practiceCount || 0;
+  document.querySelector("#practice-count").textContent = practiceCount;
+  document.querySelector("#later-count").textContent = later.length;
+  document.querySelector("#note-count").textContent = notes.length;
+  document.querySelector("#favorite-summary").textContent = `${favorites.length} 項`;
+  document.querySelector("#later-summary").textContent = `${later.length} 項`;
+  document.querySelector("#progress-percent").textContent = `${progress}%`;
+  document.querySelector("#progress-bar").style.width = `${progress}%`;
+  document.querySelector("#progress-copy").textContent = practice.length
+    ? `已完成 ${practice.length} 種方法，共練習 ${practiceCount} 次。`
+    : "完成任一方法後，這裡會開始記錄進度。";
+
+  renderLearningList("#favorite-list", favoriteItems, "還沒有收藏的方法。", data => `收藏於 ${dateLabel(data.savedAt)}`);
+  renderLearningList("#later-list", later, "還沒有待練習的方法。", data => `${data.categoryLabel || "學習方法"} · 加入 ${dateLabel(data.savedAt)}`);
+  renderLearningList("#recent-practice-list", practice, "完成方法後會顯示在這裡。", data => `${data.count || 0} 次 · 最近 ${dateLabel(data.lastCompletedAt)}`);
+  renderLearningList("#notes-list", notes, "你的方法筆記會顯示在這裡。", data => data.content || "空白筆記");
 }
 
 function renderUser(user) {
   currentUser = user;
   signedOutView.hidden = Boolean(user);
   signedInView.hidden = !user;
+  authDialog.classList.toggle("member-open", Boolean(user));
   if (!user) {
     authButtonLabel.textContent = "會員登入";
     accountAvatar.textContent = "人";
@@ -118,6 +190,12 @@ function renderUser(user) {
 authButton.addEventListener("click", openAuth);
 document.querySelector(".auth-dialog-close").addEventListener("click", () => authDialog.close());
 authDialog.addEventListener("click", event => { if (event.target === authDialog) authDialog.close(); });
+document.addEventListener("click", event => {
+  const dashboardItem = event.target.closest("[data-dashboard-method]");
+  if (!dashboardItem) return;
+  authDialog.close();
+  window.dispatchEvent(new CustomEvent("jiliguala:open-method", { detail: dashboardItem.dataset.dashboardMethod }));
+});
 
 toggleMode.addEventListener("click", () => {
   registerMode = !registerMode;
@@ -208,8 +286,78 @@ window.addEventListener("jiliguala:practice", async event => {
       lastCompletedAt: serverTimestamp()
     }, { merge: true });
     await setDoc(doc(db, "users", currentUser.uid), { practiceCount: increment(1) }, { merge: true });
+    await deleteDoc(doc(db, "users", currentUser.uid, "later", method.id));
     document.querySelector("#method-dialog")?.close();
     await loadMemberData(currentUser);
     showToast(`完成「${method.title}」一次！`);
   } catch { showToast("練習紀錄同步失敗，請稍後再試。"); }
+});
+
+window.addEventListener("jiliguala:method-opened", async event => {
+  const method = event.detail;
+  if (!currentUser) {
+    window.dispatchEvent(new CustomEvent("jiliguala:method-state", {
+      detail: { id: method.id, note: "", savedForLater: false, signedIn: false }
+    }));
+    return;
+  }
+  try {
+    const [later, note] = await Promise.all([
+      getDoc(doc(db, "users", currentUser.uid, "later", method.id)),
+      getDoc(doc(db, "users", currentUser.uid, "notes", method.id))
+    ]);
+    window.dispatchEvent(new CustomEvent("jiliguala:method-state", {
+      detail: { id: method.id, note: note.data()?.content || "", savedForLater: later.exists(), signedIn: true }
+    }));
+  } catch { showToast("方法資料載入失敗，請稍後再試。"); }
+});
+
+window.addEventListener("jiliguala:later", async event => {
+  if (!currentUser) { document.querySelector("#method-dialog")?.close(); openAuth(); return; }
+  const method = event.detail;
+  const laterRef = doc(db, "users", currentUser.uid, "later", method.id);
+  try {
+    const current = await getDoc(laterRef);
+    if (current.exists()) {
+      await deleteDoc(laterRef);
+      showToast(`已從稍後練習移除「${method.title}」`);
+    } else {
+      await setDoc(laterRef, {
+        methodId: method.id,
+        title: method.title,
+        category: method.category,
+        categoryLabel: categoryLabels[method.category] || "學習方法",
+        savedAt: serverTimestamp()
+      });
+      showToast(`已把「${method.title}」加入稍後練習`);
+    }
+    await loadMemberData(currentUser);
+    window.dispatchEvent(new CustomEvent("jiliguala:method-state", {
+      detail: { id: method.id, note: document.querySelector("#method-note")?.value || "", savedForLater: !current.exists(), signedIn: true }
+    }));
+  } catch { showToast("稍後練習同步失敗，請稍後再試。"); }
+});
+
+window.addEventListener("jiliguala:note", async event => {
+  if (!currentUser) { document.querySelector("#method-dialog")?.close(); openAuth(); return; }
+  const { method, content } = event.detail;
+  const noteRef = doc(db, "users", currentUser.uid, "notes", method.id);
+  try {
+    const cleanContent = content.trim();
+    if (cleanContent) {
+      await setDoc(noteRef, {
+        methodId: method.id,
+        title: method.title,
+        content: cleanContent,
+        updatedAt: serverTimestamp()
+      });
+      showToast(`已儲存「${method.title}」的筆記`);
+    } else {
+      await deleteDoc(noteRef);
+      showToast("空白筆記已清除");
+    }
+    await loadMemberData(currentUser);
+    const status = document.querySelector("#method-note-status");
+    if (status) status.textContent = "剛剛已同步";
+  } catch { showToast("筆記儲存失敗，請稍後再試。"); }
 });

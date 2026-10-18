@@ -18,6 +18,14 @@ service cloud.firestore {
         allow read, create, update: if owns(userId);
         allow delete: if false;
       }
+
+      match /later/{methodId} {
+        allow read, create, update, delete: if owns(userId);
+      }
+
+      match /notes/{methodId} {
+        allow read, create, update, delete: if owns(userId);
+      }
     }
 
     match /{document=**} {
