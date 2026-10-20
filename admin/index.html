@@ -50,6 +50,7 @@
             <fieldset><legend>學習入口</legend><label><input type="checkbox" name="sense" value="visual" /> 看圖記</label><label><input type="checkbox" name="sense" value="auditory" /> 聽聲記</label><label><input type="checkbox" name="sense" value="reading" /> 讀寫記</label><label><input type="checkbox" name="sense" value="doing" /> 動手記</label></fieldset>
             <label>完成成果<input id="method-output" maxlength="160" required /></label>
             <label>練習步驟（每行一步）<textarea id="method-steps" rows="5" required></textarea></label>
+            <fieldset id="method-courses"><legend>所屬課程</legend></fieldset>
             <label class="publish-toggle"><input id="method-published" type="checkbox" checked /> 上架此方法</label>
             <button class="primary" type="submit">儲存方法</button>
             <p class="message" id="form-message" aria-live="polite"></p>
@@ -59,8 +60,24 @@
             <div class="method-list" id="method-list"><p class="empty">尚未建立方法。</p></div>
           </section>
         </div>
+        <section class="course-admin">
+          <div class="library-head"><div><small>COURSE BUILDER</small><h2>課程與方法關聯</h2></div><span id="course-total">0 門</span></div>
+          <div class="course-workspace">
+            <form id="course-form" class="course-form">
+              <label>課程 ID<input id="course-id" pattern="[a-z0-9-]+" placeholder="例如 memory-basics" required /></label>
+              <label>課程名稱<input id="course-title" maxlength="80" required /></label>
+              <label>課程簡介<textarea id="course-description" rows="3" required></textarea></label>
+              <label>方法順序<select id="course-methods" multiple size="8"></select><small>按住 Command／Ctrl 可選多個，選取順序依方法排序。</small></label>
+              <div class="form-row"><label>排序<input id="course-order" type="number" min="0" value="100" /></label><label class="publish-toggle"><input id="course-published" type="checkbox" checked /> 上架課程</label></div>
+              <div class="course-form-actions"><button class="primary" type="submit">儲存課程</button><button class="secondary" id="reset-course" type="button">清空</button></div>
+              <p class="message" id="course-message" aria-live="polite"></p>
+            </form>
+            <div class="course-list" id="course-list"></div>
+          </div>
+        </section>
       </section>
     </main>
+    <script src="../methods/course-catalog.js"></script>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

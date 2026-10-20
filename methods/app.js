@@ -38,11 +38,17 @@ const empty = document.querySelector("#empty-state");
 const dialog = document.querySelector("#method-dialog");
 const dialogContent = document.querySelector("#dialog-content");
 
+function coursesForMethod(id) {
+  return (window.JILIGUALA_COURSES || []).filter(course => (course.methodIds || []).includes(id));
+}
+
 function card(method) {
+  const courseNames = coursesForMethod(method.id).map(course => course.title);
   return `<article class="method-card">
     <div class="method-meta"><span class="category-pill">${categoryNames[method.category]}</span><span class="method-card-actions"><span class="method-time">約 ${method.time} 分鐘</span><button class="favorite-button${favoriteIds.has(method.id) ? " active" : ""}" data-favorite="${method.id}" type="button" aria-label="${favoriteIds.has(method.id) ? "取消收藏" : "收藏"}${method.title}" aria-pressed="${favoriteIds.has(method.id)}">${favoriteIds.has(method.id) ? "♥" : "♡"}</button></span></div>
     <h3>${method.title}</h3>
     <p>${method.desc}</p>
+    ${courseNames.length ? `<div class="method-courses">${courseNames.map(title => `<span>${title}</span>`).join("")}</div>` : ""}
     <div class="method-tags">${method.tags.map(tag => `<span>${tag}</span>`).join("")}</div>
     <button class="method-open" data-open-method="${method.id}">打開方法卡 <span>→</span></button>
   </article>`;
@@ -77,12 +83,14 @@ function openMethod(id) {
   const method = methods.find(item => item.id === id);
   if (!method) return;
   const recommendation = recommendNext(method);
+  const courseNames = coursesForMethod(method.id).map(course => course.title);
   openMethodId = method.id;
   dialogContent.innerHTML = `<div class="dialog-head">
     <span class="category-pill">${categoryNames[method.category]} · 約 ${method.time} 分鐘</span>
     <h2>${method.title}</h2><p>${method.desc}</p>
   </div><div class="dialog-body"><h3>跟著做一次</h3><ol>${method.steps.map(step => `<li>${step}</li>`).join("")}</ol>
     <div class="dialog-output"><small>完成時，你會得到</small><strong>${method.output}</strong></div>
+    ${courseNames.length ? `<p class="dialog-course-line">所屬課程：${courseNames.join("、")}</p>` : ""}
     <p class="method-tags">${method.sense.map(sense => `<span>${senseNames[sense]}</span>`).join("")}</p>
     <div class="dialog-actions">
       <button class="button button-primary" type="button" data-complete-method="${method.id}">完成一次練習 <span>✓</span></button>
@@ -169,6 +177,7 @@ window.addEventListener("jiliguala:method-state", event => {
 });
 
 window.addEventListener("jiliguala:open-method", event => openMethod(event.detail));
+window.addEventListener("jiliguala:courses-loaded", render);
 
 window.addEventListener("jiliguala:catalog-loaded", event => {
   if (!Array.isArray(event.detail) || !event.detail.length) return;

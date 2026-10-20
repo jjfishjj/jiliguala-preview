@@ -6,6 +6,7 @@
 - The learning-method library lives in `methods/`.
 - Firebase Authentication and Firestore behavior lives in `methods/firebase-app.js`; access rules live in `firestore.rules`.
 - The content management interface lives in `admin/`. Method documents in Firestore override the built-in catalog; setting `published` to `false` hides a built-in method.
+- Default course-to-method relationships live in `methods/course-catalog.js`. Firestore `courses` documents override those defaults and the admin can change method order or publication status.
 - Do not commit `.env*`, `.vercel/`, Firebase CLI credentials, or service-account keys.
 
 ## Before pushing

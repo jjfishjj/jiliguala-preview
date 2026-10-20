@@ -49,5 +49,18 @@ fieldset input,.publish-toggle input { width:auto; }
 .method-actions button { padding:7px 10px; border:1px solid var(--line); color:var(--green); background:white; font-size:11px; font-weight:800; }
 .method-actions .danger { color:#a7442f; }
 .empty { color:var(--muted); }
+.course-admin { margin-top:20px; padding:28px; border:1px solid var(--line); background:white; }
+.course-workspace { margin-top:20px; display:grid; grid-template-columns:minmax(300px,.8fr) minmax(380px,1.2fr); gap:24px; align-items:start; }
+.course-form { display:grid; gap:14px; }
+.course-form select[multiple] { min-height:210px; }
+.course-form label small { color:var(--muted); font-size:10px; font-weight:500; }
+.course-form-actions { display:grid; grid-template-columns:1fr auto; gap:8px; }
+.course-card-admin { padding:17px 0; display:grid; grid-template-columns:1fr auto; gap:8px 14px; border-bottom:1px solid var(--line); }
+.course-card-admin h3 { margin:0 0 4px; }
+.course-card-admin p { margin:0; color:var(--muted); font-size:11px; line-height:1.55; }
+.course-method-chips { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:5px; }
+.course-method-chips span { padding:4px 7px; color:var(--green); background:#edf3e8; font-size:9px; font-weight:800; }
+.course-card-admin .method-actions { grid-column:1 / -1; }
 @media (max-width:850px) { .workspace { grid-template-columns:1fr; } .admin-intro { align-items:flex-start; flex-direction:column; } }
+@media (max-width:850px) { .course-workspace { grid-template-columns:1fr; } }
 @media (max-width:560px) { main { padding-top:24px; } .login-card,.method-form,.method-library { padding:22px; } .form-row { grid-template-columns:1fr; } .header-actions { width:100%; } .header-actions button { flex:1; } }

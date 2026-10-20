@@ -87,6 +87,18 @@ async function loadPublishedCatalog() {
   window.dispatchEvent(new CustomEvent("jiliguala:catalog-loaded", { detail: items }));
 }
 
+async function loadPublishedCourses() {
+  const snapshot = await getDocs(collection(db, "courses"));
+  const merged = new Map((window.JILIGUALA_DEFAULT_COURSES || []).map(course => [course.id, { ...course, methodIds: [...course.methodIds] }]));
+  snapshot.docs.forEach(item => {
+    const data = item.data();
+    if (data.published === false) merged.delete(item.id);
+    else merged.set(item.id, { ...(merged.get(item.id) || {}), id: item.id, ...data });
+  });
+  window.JILIGUALA_COURSES = [...merged.values()].sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+  window.dispatchEvent(new CustomEvent("jiliguala:courses-loaded", { detail: window.JILIGUALA_COURSES }));
+}
+
 function showToast(message) {
   clearTimeout(toastTimer);
   toast.textContent = message;
@@ -231,6 +243,92 @@ function renderDailyTask(daily, method) {
   action.dataset.methodId = method.id;
 }
 
+function renderMemberLevel(practiceCount, uniqueCount, streak) {
+  const xp = (practiceCount * 20) + (uniqueCount * 30) + (streak * 10);
+  const levels = [
+    { number: 1, name: "起步者", min: 0 },
+    { number: 2, name: "探索者", min: 100 },
+    { number: 3, name: "練習家", min: 250 },
+    { number: 4, name: "記法家", min: 500 },
+    { number: 5, name: "引路人", min: 900 }
+  ];
+  const current = [...levels].reverse().find(level => xp >= level.min) || levels[0];
+  const next = levels[current.number] || null;
+  const progress = next ? Math.round(((xp - current.min) / (next.min - current.min)) * 100) : 100;
+  document.querySelector("#member-level-number").textContent = current.number;
+  document.querySelector("#member-level-title").textContent = current.name;
+  document.querySelector("#member-level-xp").textContent = `${xp} XP`;
+  document.querySelector("#member-level-bar").style.width = `${Math.min(100, progress)}%`;
+  document.querySelector("#member-level-next").textContent = next
+    ? `再累積 ${next.min - xp} XP 升到 Lv.${next.number} ${next.name}`
+    : "已達目前最高等級，繼續累積你的學習紀錄。";
+}
+
+function renderBadges({ practiceCount, uniqueCount, streak, favorites, notes, practice }) {
+  const completedCategories = new Set(practice.map(item => item.data.category || catalog().find(method => method.id === item.id)?.category).filter(Boolean));
+  const badges = [
+    { icon: "✦", title: "第一步", detail: "完成首次練習", earned: practiceCount >= 1 },
+    { icon: "🔥", title: "連續七天", detail: "連續學習 7 天", earned: streak >= 7 },
+    { icon: "♥", title: "方法收藏家", detail: "收藏 5 種方法", earned: favorites >= 5 },
+    { icon: "✎", title: "筆記研究員", detail: "留下 3 篇筆記", earned: notes >= 3 },
+    { icon: "◎", title: "探索家", detail: "完成 5 種方法", earned: uniqueCount >= 5 },
+    { icon: "♛", title: "四路全開", detail: "四類各完成一種", earned: completedCategories.size >= 4 }
+  ];
+  const grid = document.querySelector("#badge-grid");
+  grid.replaceChildren(...badges.map(badge => {
+    const item = document.createElement("div");
+    item.className = `badge-item ${badge.earned ? "unlocked" : "locked"}`;
+    const icon = document.createElement("span");
+    icon.className = "badge-icon";
+    icon.textContent = badge.earned ? badge.icon : "?";
+    const copy = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = badge.title;
+    const detail = document.createElement("small");
+    detail.textContent = badge.detail;
+    copy.append(title, detail);
+    item.append(icon, copy);
+    return item;
+  }));
+  document.querySelector("#badge-summary").textContent = `${badges.filter(badge => badge.earned).length} / ${badges.length}`;
+}
+
+function renderCourseProgress(practice) {
+  const completed = new Set(practice.map(item => item.id));
+  const list = document.querySelector("#course-progress-list");
+  list.replaceChildren(...(window.JILIGUALA_COURSES || []).map(course => {
+    const methodIds = (course.methodIds || []).filter(id => catalog().some(method => method.id === id));
+    const done = methodIds.filter(id => completed.has(id)).length;
+    const nextId = methodIds.find(id => !completed.has(id)) || methodIds[0];
+    const nextMethod = catalog().find(method => method.id === nextId);
+    const card = document.createElement("article");
+    card.className = "course-progress-card";
+    const head = document.createElement("div");
+    const title = document.createElement("h4");
+    title.textContent = course.title;
+    const score = document.createElement("strong");
+    score.textContent = `${done}/${methodIds.length}`;
+    head.append(title, score);
+    const description = document.createElement("p");
+    description.textContent = course.description;
+    const track = document.createElement("div");
+    track.className = "course-mini-track";
+    const bar = document.createElement("span");
+    bar.style.width = `${methodIds.length ? Math.round((done / methodIds.length) * 100) : 0}%`;
+    track.append(bar);
+    card.append(head, description, track);
+    if (nextMethod) {
+      const action = document.createElement("button");
+      action.className = "course-next";
+      action.type = "button";
+      action.dataset.courseMethod = nextMethod.id;
+      action.textContent = done === methodIds.length ? `重新練習：${nextMethod.title} →` : `下一個：${nextMethod.title} →`;
+      card.append(action);
+    }
+    return card;
+  }));
+}
+
 async function updateAdminLink(user) {
   const link = document.querySelector("#admin-link");
   const bootstrapAdmin = user.email === "guocheju@gmail.com";
@@ -286,6 +384,9 @@ async function loadMemberData(user) {
   renderLearningList("#notes-list", notes, "你的方法筆記會顯示在這裡。", data => data.content || "空白筆記");
   renderWeeklyChart(activity);
   renderCategoryProgress(practice);
+  renderMemberLevel(practiceCount, practice.length, profile.data()?.streak || 0);
+  renderBadges({ practiceCount, uniqueCount: practice.length, streak: profile.data()?.streak || 0, favorites: favorites.length, notes: notes.length, practice });
+  renderCourseProgress(practice);
   if (currentDailyMethod) {
     if (!dailySnapshot.exists()) {
       await setDoc(doc(db, "users", user.uid, "daily", today), {
@@ -342,6 +443,7 @@ if (isFirebaseConfigured) {
   auth = getAuth(app);
   db = getFirestore(app);
   loadPublishedCatalog().catch(() => {});
+  loadPublishedCourses().catch(() => {});
 
   document.querySelector("#google-sign-in").addEventListener("click", async () => {
     showMessage("");
@@ -384,7 +486,7 @@ if (isFirebaseConfigured) {
     renderUser(user);
     if (user) {
       try {
-        await loadPublishedCatalog();
+        await Promise.all([loadPublishedCatalog(), loadPublishedCourses()]);
         await ensureProfile(user);
         await Promise.all([loadMemberData(user), updateAdminLink(user)]);
       }
@@ -453,6 +555,13 @@ document.querySelector("#daily-task-action").addEventListener("click", event => 
   if (!methodId) return;
   authDialog.close();
   window.dispatchEvent(new CustomEvent("jiliguala:open-method", { detail: methodId }));
+});
+
+document.querySelector("#course-progress-list").addEventListener("click", event => {
+  const button = event.target.closest("[data-course-method]");
+  if (!button) return;
+  authDialog.close();
+  window.dispatchEvent(new CustomEvent("jiliguala:open-method", { detail: button.dataset.courseMethod }));
 });
 
 window.addEventListener("jiliguala:method-opened", async event => {

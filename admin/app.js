@@ -10,8 +10,10 @@ const bootstrapEmail = "guocheju@gmail.com";
 const loginView = document.querySelector("#login-view");
 const adminView = document.querySelector("#admin-view");
 const form = document.querySelector("#method-form");
+const courseForm = document.querySelector("#course-form");
 const message = document.querySelector("#form-message");
 let methods = [];
+let courses = [];
 let defaultIds = new Set();
 let defaultMethodsCache = null;
 
@@ -29,6 +31,7 @@ function resetForm() {
   values("#method-published").checked = true;
   values("#method-id").disabled = false;
   values("#form-heading").textContent = "新增方法";
+  document.querySelectorAll('[name="method-course"]').forEach(input => { input.checked = false; });
   setMessage(message, "");
 }
 
@@ -62,7 +65,25 @@ function fillForm(method) {
   values("#method-output").value = method.output || "";
   values("#method-steps").value = (method.steps || []).join("\n");
   values("#method-published").checked = method.published !== false;
+  document.querySelectorAll('[name="method-course"]').forEach(input => {
+    input.checked = courses.some(course => course.id === input.value && course.methodIds.includes(method.id));
+  });
   form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderMethodCourseOptions() {
+  const fieldset = values("#method-courses");
+  const legend = fieldset.querySelector("legend");
+  fieldset.replaceChildren(legend);
+  courses.filter(course => course.published !== false).forEach(course => {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.name = "method-course";
+    input.value = course.id;
+    label.append(input, document.createTextNode(` ${course.title}`));
+    fieldset.append(label);
+  });
 }
 
 function renderMethods() {
@@ -111,7 +132,96 @@ async function loadMethods() {
   snapshot.docs.forEach(item => merged.set(item.id, { ...(merged.get(item.id) || {}), id: item.id, ...item.data() }));
   methods = [...merged.values()]
     .sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+}
+
+async function loadCourses() {
+  const snapshot = await getDocs(collection(db, "courses"));
+  const merged = new Map((window.JILIGUALA_DEFAULT_COURSES || []).map(course => [course.id, { ...course, methodIds: [...course.methodIds] }]));
+  snapshot.docs.forEach(item => merged.set(item.id, { ...(merged.get(item.id) || {}), id: item.id, ...item.data() }));
+  courses = [...merged.values()].sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+}
+
+async function loadContent() {
+  await Promise.all([loadMethods(), loadCourses()]);
+  renderMethodCourseOptions();
   renderMethods();
+  renderCourseMethodOptions();
+  renderCourses();
+}
+
+function renderCourseMethodOptions() {
+  const select = values("#course-methods");
+  select.replaceChildren(...methods.filter(method => method.published !== false).map(method => {
+    const option = document.createElement("option");
+    option.value = method.id;
+    option.textContent = `${method.title}（${method.id}）`;
+    return option;
+  }));
+}
+
+function resetCourseForm() {
+  courseForm.reset();
+  values("#course-id").disabled = false;
+  values("#course-order").value = 100;
+  values("#course-published").checked = true;
+  setMessage(values("#course-message"), "");
+}
+
+function fillCourseForm(course) {
+  values("#course-id").value = course.id;
+  values("#course-id").disabled = true;
+  values("#course-title").value = course.title || "";
+  values("#course-description").value = course.description || "";
+  values("#course-order").value = course.sortOrder ?? 100;
+  values("#course-published").checked = course.published !== false;
+  [...values("#course-methods").options].forEach(option => { option.selected = (course.methodIds || []).includes(option.value); });
+  courseForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderCourses() {
+  values("#course-total").textContent = `${courses.length} 門`;
+  const list = values("#course-list");
+  list.replaceChildren(...courses.map(course => {
+    const article = document.createElement("article");
+    article.className = "course-card-admin";
+    const copy = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = course.title;
+    const description = document.createElement("p");
+    description.textContent = course.description || "";
+    copy.append(title, description);
+    const state = document.createElement("span");
+    state.className = `method-state${course.published === false ? " off" : ""}`;
+    state.textContent = course.published === false ? "已下架" : "上架中";
+    const chips = document.createElement("div");
+    chips.className = "course-method-chips";
+    (course.methodIds || []).forEach(id => {
+      const chip = document.createElement("span");
+      chip.textContent = methods.find(method => method.id === id)?.title || id;
+      chips.append(chip);
+    });
+    const actions = document.createElement("div");
+    actions.className = "method-actions";
+    [["編輯課程", "edit-course"], [course.published === false ? "上架" : "下架", "toggle-course"]].forEach(([label, action]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.dataset.action = action;
+      button.dataset.id = course.id;
+      actions.append(button);
+    });
+    article.append(copy, state, chips, actions);
+    return article;
+  }));
+}
+
+async function updateMethodCourses(methodId) {
+  const selected = new Set([...document.querySelectorAll('[name="method-course"]:checked')].map(input => input.value));
+  await Promise.all(courses.map(course => {
+    const ids = (course.methodIds || []).filter(id => id !== methodId);
+    if (selected.has(course.id)) ids.push(methodId);
+    return setDoc(doc(db, "courses", course.id), { methodIds: ids, updatedAt: serverTimestamp() }, { merge: true });
+  }));
 }
 
 async function loadDefaultMethods() {
@@ -156,7 +266,7 @@ onAuthStateChanged(auth, async user => {
     loginView.hidden = true;
     adminView.hidden = false;
     values("#admin-identity").textContent = `目前登入：${user.email}`;
-    await loadMethods();
+    await loadContent();
   } catch { setMessage(values("#login-message"), "無法確認管理員權限，請稍後再試。"); }
 });
 
@@ -165,8 +275,9 @@ form.addEventListener("submit", async event => {
   const id = values("#method-id").value.trim();
   try {
     await setDoc(doc(db, "methods", id), methodFromForm(), { merge: true });
+    await updateMethodCourses(id);
     setMessage(message, "方法已儲存並同步到網站。", true);
-    await loadMethods();
+    await loadContent();
   } catch { setMessage(message, "方法儲存失敗，請檢查管理員權限。"); }
 });
 
@@ -178,7 +289,7 @@ values("#method-list").addEventListener("click", async event => {
   if (button.dataset.action === "edit") { fillForm(method); return; }
   if (button.dataset.action === "toggle") {
     await setDoc(doc(db, "methods", method.id), { published: method.published === false, updatedAt: serverTimestamp() }, { merge: true });
-    await loadMethods();
+    await loadContent();
     return;
   }
   if (button.dataset.action === "delete" && window.confirm(`確定刪除「${method.title}」？`)) {
@@ -187,7 +298,7 @@ values("#method-list").addEventListener("click", async event => {
     } else {
       await deleteDoc(doc(db, "methods", method.id));
     }
-    await loadMethods();
+    await loadContent();
   }
 });
 
@@ -201,10 +312,41 @@ values("#seed-methods").addEventListener("click", async () => {
       batch.set(doc(db, "methods", id), { ...data, sortOrder: index, published: true, updatedAt: serverTimestamp() }, { merge: true });
     });
     await batch.commit();
-    await loadMethods();
+    await loadContent();
     setMessage(message, `已匯入 ${defaults.length} 種方法。`, true);
   } catch { setMessage(message, "匯入失敗，請稍後再試。"); }
 });
 
 values("#reset-form").addEventListener("click", resetForm);
+courseForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  const id = values("#course-id").value.trim();
+  const methodIds = [...values("#course-methods").selectedOptions].map(option => option.value);
+  try {
+    await setDoc(doc(db, "courses", id), {
+      title: values("#course-title").value.trim(),
+      description: values("#course-description").value.trim(),
+      methodIds,
+      sortOrder: Number(values("#course-order").value),
+      published: values("#course-published").checked,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    setMessage(values("#course-message"), "課程與方法順序已儲存。", true);
+    await loadContent();
+  } catch { setMessage(values("#course-message"), "課程儲存失敗，請稍後再試。"); }
+});
+
+values("#course-list").addEventListener("click", async event => {
+  const button = event.target.closest("[data-action]");
+  if (!button) return;
+  const course = courses.find(item => item.id === button.dataset.id);
+  if (!course) return;
+  if (button.dataset.action === "edit-course") { fillCourseForm(course); return; }
+  if (button.dataset.action === "toggle-course") {
+    await setDoc(doc(db, "courses", course.id), { published: course.published === false, updatedAt: serverTimestamp() }, { merge: true });
+    await loadContent();
+  }
+});
+
+values("#reset-course").addEventListener("click", resetCourseForm);
 values("#logout").addEventListener("click", () => signOut(auth));
