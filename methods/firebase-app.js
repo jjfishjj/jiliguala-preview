@@ -62,6 +62,12 @@ function dayOffset(key, offset) {
   return dateKey(date);
 }
 
+function weekStartKey(key = dateKey()) {
+  const date = new Date(`${key}T12:00:00+08:00`);
+  const daysSinceMonday = (date.getDay() + 6) % 7;
+  return dayOffset(key, -daysSinceMonday);
+}
+
 function catalog() {
   return window.JILIGUALA_METHODS || [];
 }
@@ -201,6 +207,54 @@ function renderWeeklyChart(activity) {
   }));
 }
 
+async function renderWeeklyChallenge(user, activity, practiceCount) {
+  const start = weekStartKey();
+  const weeklyCount = activity
+    .filter(item => item.id >= start && item.id <= dateKey())
+    .reduce((sum, item) => sum + (item.data.count || 0), 0);
+  const goal = 5;
+  const completed = weeklyCount >= goal;
+  document.querySelector("#weekly-challenge-count").textContent = `${Math.min(weeklyCount, goal)} / ${goal}`;
+  document.querySelector("#weekly-challenge-bar").style.width = `${Math.min(100, Math.round((weeklyCount / goal) * 100))}%`;
+  document.querySelector("#weekly-challenge-message").textContent = completed
+    ? "本週挑戰完成！你已解鎖一枚週挑戰星章。"
+    : `再完成 ${goal - weeklyCount} 次練習，就能完成本週挑戰。`;
+
+  const displayName = user.displayName || `學習者 ${user.uid.slice(0, 4).toUpperCase()}`;
+  try {
+    await setDoc(doc(db, "leaderboard", user.uid), {
+      displayName,
+      weeklyCount,
+      totalPracticeCount: practiceCount,
+      weekKey: start,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    const snapshot = await getDocs(collection(db, "leaderboard"));
+    const ranking = snapshot.docs
+      .map(item => ({ id: item.id, ...item.data() }))
+      .filter(item => item.weekKey === start && item.weeklyCount > 0)
+      .sort((a, b) => b.weeklyCount - a.weeklyCount || b.totalPracticeCount - a.totalPracticeCount)
+      .slice(0, 5);
+    const list = document.querySelector("#weekly-leaderboard");
+    if (!ranking.length) {
+      list.innerHTML = '<li class="leaderboard-empty">完成練習後加入排行。</li>';
+      return;
+    }
+    list.replaceChildren(...ranking.map(item => {
+      const row = document.createElement("li");
+      if (item.id === user.uid) row.className = "me";
+      const name = document.createElement("span");
+      name.textContent = `${item.displayName}${item.id === user.uid ? "（我）" : ""}`;
+      const score = document.createElement("strong");
+      score.textContent = `${item.weeklyCount} 次`;
+      row.append(name, score);
+      return row;
+    }));
+  } catch {
+    document.querySelector("#weekly-leaderboard").innerHTML = '<li class="leaderboard-empty">排行榜稍後再試。</li>';
+  }
+}
+
 function renderCategoryProgress(practice) {
   const container = document.querySelector("#category-progress");
   const totals = catalog().reduce((result, method) => {
@@ -325,6 +379,11 @@ function renderCourseProgress(practice) {
       action.textContent = done === methodIds.length ? `重新練習：${nextMethod.title} →` : `下一個：${nextMethod.title} →`;
       card.append(action);
     }
+    const detail = document.createElement("a");
+    detail.className = "course-detail-link";
+    detail.href = `../courses/course.html?course=${encodeURIComponent(course.id)}`;
+    detail.textContent = "查看完整章節";
+    card.append(detail);
     return card;
   }));
 }
@@ -383,6 +442,7 @@ async function loadMemberData(user) {
   renderLearningList("#recent-practice-list", practice, "完成方法後會顯示在這裡。", data => `${data.count || 0} 次 · 最近 ${dateLabel(data.lastCompletedAt)}`);
   renderLearningList("#notes-list", notes, "你的方法筆記會顯示在這裡。", data => data.content || "空白筆記");
   renderWeeklyChart(activity);
+  await renderWeeklyChallenge(user, activity, practiceCount);
   renderCategoryProgress(practice);
   renderMemberLevel(practiceCount, practice.length, profile.data()?.streak || 0);
   renderBadges({ practiceCount, uniqueCount: practice.length, streak: profile.data()?.streak || 0, favorites: favorites.length, notes: notes.length, practice });

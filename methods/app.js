@@ -190,3 +190,5 @@ window.JILIGUALA_DEFAULT_METHODS = methods.map(method => ({ ...method }));
 window.JILIGUALA_METHODS = methods;
 
 render();
+const requestedMethod = new URLSearchParams(window.location.search).get("open");
+if (requestedMethod) queueMicrotask(() => openMethod(requestedMethod));

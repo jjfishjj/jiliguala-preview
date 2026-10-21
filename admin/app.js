@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
-import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, serverTimestamp, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+import { collection, collectionGroup, deleteDoc, doc, getDoc, getDocs, getFirestore, serverTimestamp, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 import { firebaseConfig } from "../methods/firebase-config.js";
 
 const app = initializeApp(firebaseConfig);
@@ -23,6 +23,99 @@ function setMessage(element, text, success = false) {
 }
 
 function values(id) { return document.querySelector(id); }
+
+function adminDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+function adminDayOffset(key, offset) {
+  const date = new Date(`${key}T12:00:00+08:00`);
+  date.setDate(date.getDate() + offset);
+  return adminDateKey(date);
+}
+
+function adminWeekStart() {
+  const today = adminDateKey();
+  const date = new Date(`${today}T12:00:00+08:00`);
+  return adminDayOffset(today, -((date.getDay() + 6) % 7));
+}
+
+function renderAnalyticsBars(selector, rows, valueLabel = value => String(value)) {
+  const container = values(selector);
+  const max = Math.max(1, ...rows.map(row => row.value));
+  if (!rows.length) { container.innerHTML = '<p class="empty">目前還沒有足夠資料。</p>'; return; }
+  container.replaceChildren(...rows.map(row => {
+    const item = document.createElement("div");
+    item.className = "analytics-bar";
+    const label = document.createElement("span");
+    label.textContent = row.label;
+    const track = document.createElement("div");
+    track.className = "analytics-track";
+    const bar = document.createElement("i");
+    bar.style.width = `${Math.round((row.value / max) * 100)}%`;
+    track.append(bar);
+    const value = document.createElement("strong");
+    value.textContent = valueLabel(row.value, row);
+    item.append(label, track, value);
+    return item;
+  }));
+}
+
+async function loadAnalytics() {
+  values("#analytics-status").textContent = "正在讀取會員學習資料…";
+  try {
+    const [profilesSnapshot, practiceSnapshot, activitySnapshot] = await Promise.all([
+      getDocs(collection(db, "users")),
+      getDocs(collectionGroup(db, "practice")),
+      getDocs(collectionGroup(db, "activity"))
+    ]);
+    const profiles = profilesSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+    const totalPractices = profiles.reduce((sum, item) => sum + (item.practiceCount || 0), 0);
+    const weekStart = adminWeekStart();
+    const active = profiles.filter(item => item.lastPracticeDate >= weekStart).length;
+    values("#analytics-members").textContent = profiles.length;
+    values("#analytics-practices").textContent = totalPractices;
+    values("#analytics-active").textContent = active;
+    values("#analytics-average").textContent = profiles.length ? (totalPractices / profiles.length).toFixed(1) : "0";
+
+    const today = adminDateKey();
+    const days = Array.from({ length: 7 }, (_, index) => adminDayOffset(today, index - 6));
+    const dailyCounts = new Map(days.map(day => [day, 0]));
+    activitySnapshot.docs.forEach(item => { if (dailyCounts.has(item.id)) dailyCounts.set(item.id, dailyCounts.get(item.id) + (item.data().count || 0)); });
+    const maxDaily = Math.max(1, ...dailyCounts.values());
+    values("#admin-trend").replaceChildren(...days.map(day => {
+      const count = dailyCounts.get(day);
+      const column = document.createElement("div");
+      column.innerHTML = `<b>${count}</b><i style="height:${Math.max(4, Math.round((count / maxDaily) * 105))}px"></i><span>${day.slice(5)}</span>`;
+      return column;
+    }));
+
+    const methodCounts = new Map();
+    const completedByUser = new Map();
+    practiceSnapshot.docs.forEach(item => {
+      const data = item.data();
+      const userId = item.ref.parent.parent?.id;
+      methodCounts.set(item.id, (methodCounts.get(item.id) || 0) + (data.count || 0));
+      if (userId) {
+        if (!completedByUser.has(userId)) completedByUser.set(userId, new Set());
+        completedByUser.get(userId).add(item.id);
+      }
+    });
+    const popular = [...methodCounts.entries()].map(([id, value]) => ({ label: methods.find(method => method.id === id)?.title || id, value })).sort((a, b) => b.value - a.value).slice(0, 5);
+    renderAnalyticsBars("#popular-methods", popular, value => `${value} 次`);
+
+    const courseRows = courses.filter(course => course.published !== false).map(course => {
+      const completed = [...completedByUser.values()].filter(ids => (course.methodIds || []).every(id => ids.has(id))).length;
+      return { label: course.title, value: completed, members: profiles.length };
+    });
+    renderAnalyticsBars("#course-analytics", courseRows, (value, row) => `${value}/${row.members}`);
+    values("#analytics-status").textContent = `資料更新於 ${new Intl.DateTimeFormat("zh-TW", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Taipei" }).format(new Date())}`;
+  } catch {
+    values("#analytics-status").textContent = "統計資料暫時無法讀取，請確認 Firestore 規則已部署。";
+  }
+}
 
 function resetForm() {
   form.reset();
@@ -267,6 +360,7 @@ onAuthStateChanged(auth, async user => {
     adminView.hidden = false;
     values("#admin-identity").textContent = `目前登入：${user.email}`;
     await loadContent();
+    await loadAnalytics();
   } catch { setMessage(values("#login-message"), "無法確認管理員權限，請稍後再試。"); }
 });
 
@@ -349,4 +443,5 @@ values("#course-list").addEventListener("click", async event => {
 });
 
 values("#reset-course").addEventListener("click", resetCourseForm);
+values("#refresh-analytics").addEventListener("click", loadAnalytics);
 values("#logout").addEventListener("click", () => signOut(auth));

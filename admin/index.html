@@ -60,6 +60,21 @@
             <div class="method-list" id="method-list"><p class="empty">尚未建立方法。</p></div>
           </section>
         </div>
+        <section class="analytics-admin" aria-labelledby="analytics-title">
+          <div class="library-head"><div><small>LEARNING ANALYTICS</small><h2 id="analytics-title">學習數據總覽</h2></div><button class="secondary" id="refresh-analytics" type="button">重新整理</button></div>
+          <p class="analytics-status" id="analytics-status">正在讀取會員學習資料…</p>
+          <div class="analytics-stats">
+            <article><small>會員人數</small><strong id="analytics-members">0</strong><span>已建立學習檔案</span></article>
+            <article><small>總練習次數</small><strong id="analytics-practices">0</strong><span>所有會員累積</span></article>
+            <article><small>本週活躍</small><strong id="analytics-active">0</strong><span>週一至今天有練習</span></article>
+            <article><small>平均練習</small><strong id="analytics-average">0</strong><span>每位會員</span></article>
+          </div>
+          <div class="analytics-grid">
+            <section><div class="analytics-heading"><h3>最近 7 天練習量</h3><span>全站</span></div><div class="admin-trend" id="admin-trend"></div></section>
+            <section><div class="analytics-heading"><h3>熱門方法</h3><span>累積次數</span></div><div class="analytics-bars" id="popular-methods"></div></section>
+            <section class="analytics-wide"><div class="analytics-heading"><h3>課程完成狀況</h3><span>完成全部章節</span></div><div class="analytics-bars course-analytics" id="course-analytics"></div></section>
+          </div>
+        </section>
         <section class="course-admin">
           <div class="library-head"><div><small>COURSE BUILDER</small><h2>課程與方法關聯</h2></div><span id="course-total">0 門</span></div>
           <div class="course-workspace">

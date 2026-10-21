@@ -50,6 +50,29 @@ fieldset input,.publish-toggle input { width:auto; }
 .method-actions .danger { color:#a7442f; }
 .empty { color:var(--muted); }
 .course-admin { margin-top:20px; padding:28px; border:1px solid var(--line); background:white; }
+.analytics-admin { margin-top:20px; padding:28px; border:1px solid var(--line); background:white; }
+.analytics-status { margin:12px 0 18px; color:var(--muted); font-size:11px; }
+.analytics-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.analytics-stats article { padding:18px; background:#edf3e8; }
+.analytics-stats small,.analytics-stats span { display:block; color:var(--muted); font-size:9px; }
+.analytics-stats strong { display:block; margin:5px 0 3px; color:var(--green); font-size:30px; }
+.analytics-grid { margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.analytics-grid > section { padding:18px; border:1px solid var(--line); }
+.analytics-wide { grid-column:1 / -1; }
+.analytics-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.analytics-heading h3 { margin:0; font-size:14px; }
+.analytics-heading span { color:var(--muted); font-size:9px; }
+.admin-trend { height:150px; margin-top:18px; display:grid; grid-template-columns:repeat(7,1fr); align-items:end; gap:8px; }
+.admin-trend div { height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; }
+.admin-trend i { width:min(28px,80%); min-height:4px; display:block; background:var(--green); }
+.admin-trend b { color:var(--green); font-size:9px; }
+.admin-trend span { color:var(--muted); font-size:8px; }
+.analytics-bars { margin-top:17px; display:grid; gap:11px; }
+.analytics-bar { display:grid; grid-template-columns:minmax(90px,1fr) 2fr 40px; gap:9px; align-items:center; font-size:10px; }
+.analytics-bar > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.analytics-track { height:7px; overflow:hidden; border-radius:8px; background:#e5e9e2; }
+.analytics-track i { display:block; height:100%; background:var(--orange); }
+.analytics-bar strong { color:var(--green); text-align:right; font-size:10px; }
 .course-workspace { margin-top:20px; display:grid; grid-template-columns:minmax(300px,.8fr) minmax(380px,1.2fr); gap:24px; align-items:start; }
 .course-form { display:grid; gap:14px; }
 .course-form select[multiple] { min-height:210px; }
@@ -63,4 +86,5 @@ fieldset input,.publish-toggle input { width:auto; }
 .course-card-admin .method-actions { grid-column:1 / -1; }
 @media (max-width:850px) { .workspace { grid-template-columns:1fr; } .admin-intro { align-items:flex-start; flex-direction:column; } }
 @media (max-width:850px) { .course-workspace { grid-template-columns:1fr; } }
+@media (max-width:760px) { .analytics-stats { grid-template-columns:1fr 1fr; } .analytics-grid { grid-template-columns:1fr; } .analytics-wide { grid-column:auto; } }
 @media (max-width:560px) { main { padding-top:24px; } .login-card,.method-form,.method-library { padding:22px; } .form-row { grid-template-columns:1fr; } .header-actions { width:100%; } .header-actions button { flex:1; } }

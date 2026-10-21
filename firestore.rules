@@ -29,7 +29,8 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow create, read, update: if owns(userId);
+      allow create, update: if owns(userId);
+      allow read: if owns(userId) || isAdmin();
       allow delete: if false;
 
       match /favorites/{methodId} {
@@ -37,7 +38,8 @@ service cloud.firestore {
       }
 
       match /practice/{methodId} {
-        allow read, create, update: if owns(userId);
+        allow read: if owns(userId) || isAdmin();
+        allow create, update: if owns(userId);
         allow delete: if false;
       }
 
@@ -50,13 +52,28 @@ service cloud.firestore {
       }
 
       match /daily/{date} {
-        allow read, create, update, delete: if owns(userId);
+        allow read: if owns(userId) || isAdmin();
+        allow create, update, delete: if owns(userId);
       }
 
       match /activity/{date} {
-        allow read, create, update: if owns(userId);
+        allow read: if owns(userId) || isAdmin();
+        allow create, update: if owns(userId);
         allow delete: if false;
       }
+    }
+
+    match /leaderboard/{userId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if owns(userId);
+    }
+
+    match /{path=**}/practice/{methodId} {
+      allow read: if isAdmin();
+    }
+
+    match /{path=**}/activity/{date} {
+      allow read: if isAdmin();
     }
 
     match /{document=**} {
