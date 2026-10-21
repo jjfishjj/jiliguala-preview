@@ -7,7 +7,8 @@
 - Firebase Authentication and Firestore behavior lives in `methods/firebase-app.js`; access rules live in `firestore.rules`.
 - The content management interface lives in `admin/`. Method documents in Firestore override the built-in catalog; setting `published` to `false` hides a built-in method.
 - Default course-to-method relationships live in `methods/course-catalog.js`. Firestore `courses` documents override those defaults and the admin can change method order or publication status.
-- Course chapter pages use `courses/course.html?course=<course-id>`. Weekly leaderboard summaries live in `leaderboard/{userId}`; signed-in members can read them, and each member can update only their own summary.
+- Course chapter pages use `courses/course.html?course=<course-id>`. Weekly leaderboard summaries live in `leaderboard/{userId}`; signed-in members can read them, while only the trusted callable function can update scores.
+- Trusted practice scoring lives in the `recordPractice` callable function under `functions/`. Clients cannot write practice, activity, protected profile counters, or leaderboard documents directly.
 - Admin analytics reads member profiles plus the `practice` and `activity` collection groups. Keep aggregate displays free of member email addresses and private notes.
 - Do not commit `.env*`, `.vercel/`, Firebase CLI credentials, or service-account keys.
 

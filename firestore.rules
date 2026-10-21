@@ -29,7 +29,12 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow create, update: if owns(userId);
+      allow create: if owns(userId) && !request.resource.data.keys().hasAny([
+        'practiceCount', 'streak', 'lastPracticeDate'
+      ]);
+      allow update: if owns(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'displayName', 'email', 'photoURL', 'lastLoginAt'
+      ]);
       allow read: if owns(userId) || isAdmin();
       allow delete: if false;
 
@@ -39,8 +44,7 @@ service cloud.firestore {
 
       match /practice/{methodId} {
         allow read: if owns(userId) || isAdmin();
-        allow create, update: if owns(userId);
-        allow delete: if false;
+        allow write: if false;
       }
 
       match /later/{methodId} {
@@ -58,14 +62,13 @@ service cloud.firestore {
 
       match /activity/{date} {
         allow read: if owns(userId) || isAdmin();
-        allow create, update: if owns(userId);
-        allow delete: if false;
+        allow write: if false;
       }
     }
 
     match /leaderboard/{userId} {
       allow read: if request.auth != null;
-      allow create, update, delete: if owns(userId);
+      allow write: if false;
     }
 
     match /{path=**}/practice/{methodId} {

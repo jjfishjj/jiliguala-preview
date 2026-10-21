@@ -16,10 +16,10 @@ import {
   getDoc,
   getDocs,
   getFirestore,
-  increment,
   serverTimestamp,
   setDoc
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-functions.js";
 import { firebaseConfig, isFirebaseConfigured } from "./firebase-config.js";
 
 const authDialog = document.querySelector("#auth-dialog");
@@ -39,6 +39,7 @@ let registerMode = false;
 let currentUser = null;
 let auth;
 let db;
+let recordPractice;
 let toastTimer;
 let currentDailyMethod = null;
 const categoryLabels = {
@@ -207,7 +208,7 @@ function renderWeeklyChart(activity) {
   }));
 }
 
-async function renderWeeklyChallenge(user, activity, practiceCount) {
+async function renderWeeklyChallenge(user, activity) {
   const start = weekStartKey();
   const weeklyCount = activity
     .filter(item => item.id >= start && item.id <= dateKey())
@@ -220,15 +221,7 @@ async function renderWeeklyChallenge(user, activity, practiceCount) {
     ? "本週挑戰完成！你已解鎖一枚週挑戰星章。"
     : `再完成 ${goal - weeklyCount} 次練習，就能完成本週挑戰。`;
 
-  const displayName = user.displayName || `學習者 ${user.uid.slice(0, 4).toUpperCase()}`;
   try {
-    await setDoc(doc(db, "leaderboard", user.uid), {
-      displayName,
-      weeklyCount,
-      totalPracticeCount: practiceCount,
-      weekKey: start,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
     const snapshot = await getDocs(collection(db, "leaderboard"));
     const ranking = snapshot.docs
       .map(item => ({ id: item.id, ...item.data() }))
@@ -442,7 +435,7 @@ async function loadMemberData(user) {
   renderLearningList("#recent-practice-list", practice, "完成方法後會顯示在這裡。", data => `${data.count || 0} 次 · 最近 ${dateLabel(data.lastCompletedAt)}`);
   renderLearningList("#notes-list", notes, "你的方法筆記會顯示在這裡。", data => data.content || "空白筆記");
   renderWeeklyChart(activity);
-  await renderWeeklyChallenge(user, activity, practiceCount);
+  await renderWeeklyChallenge(user, activity);
   renderCategoryProgress(practice);
   renderMemberLevel(practiceCount, practice.length, profile.data()?.streak || 0);
   renderBadges({ practiceCount, uniqueCount: practice.length, streak: profile.data()?.streak || 0, favorites: favorites.length, notes: notes.length, practice });
@@ -502,6 +495,7 @@ if (isFirebaseConfigured) {
   const app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  recordPractice = httpsCallable(getFunctions(app, "asia-east1"), "recordPractice");
   loadPublishedCatalog().catch(() => {});
   loadPublishedCourses().catch(() => {});
 
@@ -578,32 +572,7 @@ window.addEventListener("jiliguala:practice", async event => {
   if (!currentUser) { document.querySelector("#method-dialog")?.close(); openAuth(); return; }
   const method = event.detail;
   try {
-    const today = dateKey();
-    const profileRef = doc(db, "users", currentUser.uid);
-    const profile = await getDoc(profileRef);
-    const previousDate = profile.data()?.lastPracticeDate;
-    const nextStreak = previousDate === today
-      ? (profile.data()?.streak || 1)
-      : previousDate === dayOffset(today, -1) ? (profile.data()?.streak || 0) + 1 : 1;
-    await setDoc(doc(db, "users", currentUser.uid, "practice", method.id), {
-      methodId: method.id,
-      title: method.title,
-      category: method.category,
-      count: increment(1),
-      lastCompletedAt: serverTimestamp()
-    }, { merge: true });
-    await Promise.all([
-      setDoc(profileRef, { practiceCount: increment(1), streak: nextStreak, lastPracticeDate: today }, { merge: true }),
-      setDoc(doc(db, "users", currentUser.uid, "activity", today), { count: increment(1), updatedAt: serverTimestamp() }, { merge: true }),
-      currentDailyMethod?.id === method.id
-        ? setDoc(doc(db, "users", currentUser.uid, "daily", today), {
-          completed: true,
-          completedCount: increment(1),
-          completedAt: serverTimestamp()
-        }, { merge: true })
-        : Promise.resolve()
-    ]);
-    await deleteDoc(doc(db, "users", currentUser.uid, "later", method.id));
+    await recordPractice({ methodId: method.id });
     document.querySelector("#method-dialog")?.close();
     await loadMemberData(currentUser);
     showToast(`完成「${method.title}」一次！`);

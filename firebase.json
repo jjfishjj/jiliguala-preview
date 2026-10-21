@@ -17,5 +17,9 @@
     "location": "asia-east1",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs22"
   }
 }
