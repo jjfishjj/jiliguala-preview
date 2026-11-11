@@ -45,16 +45,16 @@
           <p class="eyebrow"><span></span> 記理呱啦 × Fluent AI 方法學</p>
           <h1>不用更用力，<br /><em>換一個記法</em>就好。</h1>
           <p class="hero-lead">
-            把複雜的學習理論，整理成今天就能試的小方法。從你的感官入口出發，找到記得住、想得懂、也說得出來的方式。
+            把學習方法整理成今天就能試的小步驟。先選當下目標，再挑一種你願意試的方法；感官偏好只是可選入口。
           </p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#finder">先找我的入口 <span>→</span></a>
+            <a class="button button-primary" href="#finder">先選學習目標 <span>→</span></a>
             <a class="button button-quiet" href="#library">直接看全部方法</a>
           </div>
           <div class="hero-proof" aria-label="方法圖鑑摘要">
             <div><strong>23</strong><span>種實用方法</span></div>
-            <div><strong>5–9</strong><span>分鐘可開始</span></div>
-            <div><strong>4</strong><span>種學習入口</span></div>
+            <div><strong>5–9</strong><span>分鐘／多數方法</span></div>
+            <div><strong>4</strong><span>種學習目標</span></div>
           </div>
         </div>
         <div class="hero-visual" aria-hidden="true">
@@ -70,41 +70,43 @@
       <section class="finder section" id="finder">
         <div class="section-heading split-heading">
           <div>
-            <p class="eyebrow"><span></span> 從你自然的方式開始</p>
-            <h2>你通常怎麼把東西記起來？</h2>
+            <p class="eyebrow"><span></span> 先選學習目標</p>
+            <h2>你現在想先做到什麼？</h2>
           </div>
-          <p>沒有標準答案，也不需要只選一種。先點最像你的入口，我們會替你篩出可以立即試的方法。</p>
+          <p>先依照當下任務找方法。看圖、聽說、讀寫或動手只是可選的切入偏好，不是固定的學習型態，也不代表某種方式一定對你更有效。</p>
         </div>
-        <div class="sense-grid">
-          <button class="sense-card visual" data-sense="visual">
-            <span class="sense-icon">◉</span>
-            <span class="sense-number">01</span>
-            <strong>看圖記</strong>
-            <small>畫面、顏色、位置與關係</small>
-            <span class="sense-link">看看適合的方法 →</span>
+        <div class="goal-grid" role="group" aria-label="依學習目標篩選方法">
+          <button class="goal-card" data-goal="remember" aria-pressed="false" aria-controls="library">
+            <span class="goal-number">01</span><strong>記得住</strong><small>單字、公式、順序或事實</small><span>看記憶方法 →</span>
           </button>
-          <button class="sense-card auditory" data-sense="auditory">
-            <span class="sense-icon">♪</span>
-            <span class="sense-number">02</span>
-            <strong>聽聲記</strong>
-            <small>語調、節奏、跟讀與複述</small>
-            <span class="sense-link">看看適合的方法 →</span>
+          <button class="goal-card" data-goal="understand" aria-pressed="false" aria-controls="library">
+            <span class="goal-number">02</span><strong>想得懂</strong><small>整理概念、關係與因果</small><span>看理解方法 →</span>
           </button>
-          <button class="sense-card reading" data-sense="reading">
-            <span class="sense-icon">Aa</span>
-            <span class="sense-number">03</span>
-            <strong>讀寫記</strong>
-            <small>文字、分類、整理與解釋</small>
-            <span class="sense-link">看看適合的方法 →</span>
+          <button class="goal-card" data-goal="express" aria-pressed="false" aria-controls="library">
+            <span class="goal-number">03</span><strong>說得出</strong><small>複述、教人或實際表達</small><span>看輸出方法 →</span>
           </button>
-          <button class="sense-card doing" data-sense="doing">
-            <span class="sense-icon">↗</span>
-            <span class="sense-number">04</span>
-            <strong>動手記</strong>
-            <small>操作、移動、角色與情境</small>
-            <span class="sense-link">看看適合的方法 →</span>
+          <button class="goal-card" data-goal="improve" aria-pressed="false" aria-controls="library">
+            <span class="goal-number">04</span><strong>改得好</strong><small>找錯、辨析並修正答案</small><span>看修正方法 →</span>
           </button>
         </div>
+        <details class="preference-picker">
+          <summary>可選：用偏好的感官入口再篩選</summary>
+          <p>可以跳過或一次試多種方式；偏好是導覽選項，不是能力標籤。</p>
+          <div class="sense-grid" role="group" aria-label="可選的感官入口偏好">
+            <button class="sense-card visual" data-sense="visual" aria-pressed="false" aria-controls="library">
+              <span class="sense-icon">◉</span><span class="sense-number">01</span><strong>看圖記</strong><small>畫面、顏色、位置與關係</small><span class="sense-link">可選偏好</span>
+            </button>
+            <button class="sense-card auditory" data-sense="auditory" aria-pressed="false" aria-controls="library">
+              <span class="sense-icon">♪</span><span class="sense-number">02</span><strong>聽聲記</strong><small>語調、節奏、跟讀與複述</small><span class="sense-link">可選偏好</span>
+            </button>
+            <button class="sense-card reading" data-sense="reading" aria-pressed="false" aria-controls="library">
+              <span class="sense-icon">Aa</span><span class="sense-number">03</span><strong>讀寫記</strong><small>文字、分類、整理與解釋</small><span class="sense-link">可選偏好</span>
+            </button>
+            <button class="sense-card doing" data-sense="doing" aria-pressed="false" aria-controls="library">
+              <span class="sense-icon">↗</span><span class="sense-number">04</span><strong>動手記</strong><small>操作、移動、角色與情境</small><span class="sense-link">可選偏好</span>
+            </button>
+          </div>
+        </details>
       </section>
 
       <section class="featured section" aria-labelledby="featured-title">
@@ -145,11 +147,11 @@
           </label>
         </div>
         <div class="filter-row" role="group" aria-label="方法分類">
-          <button class="filter active" data-filter="all">全部方法</button>
-          <button class="filter" data-filter="remember">記得住</button>
-          <button class="filter" data-filter="understand">想得懂</button>
-          <button class="filter" data-filter="express">說得出</button>
-          <button class="filter" data-filter="improve">改得好</button>
+          <button class="filter active" data-filter="all" aria-pressed="true">全部方法</button>
+          <button class="filter" data-filter="remember" aria-pressed="false">記得住</button>
+          <button class="filter" data-filter="understand" aria-pressed="false">想得懂</button>
+          <button class="filter" data-filter="express" aria-pressed="false">說得出</button>
+          <button class="filter" data-filter="improve" aria-pressed="false">改得好</button>
         </div>
         <p class="result-count" aria-live="polite"><strong id="result-count">23</strong> 種方法，選一張有感覺的就好</p>
         <div class="method-grid" id="method-grid"></div>
@@ -166,7 +168,7 @@
           <p class="eyebrow"><span></span> 不知道選哪個？</p>
           <h2>用三步，把方法放進今天的學習。</h2>
           <p>方法不是看完就會。挑一個很小的內容，完成一次輸入、回想與修正，才會慢慢變成你的記法。</p>
-          <a class="text-link" href="../method">找出我的記法 →</a>
+          <a class="text-link" href="#finder">依目標再找一個方法 →</a>
         </div>
         <div class="path-steps">
           <article>
@@ -175,11 +177,11 @@
           </article>
           <article>
             <span>2</span>
-            <div><small>換一種入口</small><h3>選一個方法做做看</h3><p>畫、說、整理或演一次，控制在 5–9 分鐘。</p></div>
+            <div><small>換一種入口</small><h3>選一個方法做做看</h3><p>依卡片建議時間練習；多數方法約 5–9 分鐘。</p></div>
           </article>
           <article>
             <span>3</span>
-            <div><small>把提示關掉</small><h3>回想，再修一次</h3><p>卡住不是失敗，而是大腦正在告訴你要補哪裡。</p></div>
+            <div><small>把提示關掉</small><h3>先回想，再對照修正</h3><p>遮住提示試著取回內容，再對照原資料修正；可安排 1、3 或 7 天後重測。</p></div>
           </article>
         </div>
       </section>
@@ -192,7 +194,7 @@
         <div class="source-links">
           <a href="../" class="source-link">
             <span class="source-mark frog">呱</span>
-            <div><small>Jiliguala</small><strong>從感官與記憶身份出發</strong></div><i>→</i>
+            <div><small>Jiliguala</small><strong>從學習目標挑選可試的方法</strong></div><i>→</i>
           </a>
           <a href="https://jjfishjj.github.io/fluent-ai/practice" class="source-link">
             <span class="source-mark ai">AI</span>
@@ -201,7 +203,20 @@
         </div>
       </section>
 
-      <section class="faq section" id="faq">
+<section class="evidence-note section" aria-labelledby="evidence-title">
+        <div>
+          <p class="eyebrow"><span></span> 方法原則與研究參考</p>
+          <h2 id="evidence-title">用回想與間隔複習，檢查是否真的記住。</h2>
+          <p>感官偏好只幫你選一個願意嘗試的入口；本頁不把人分成固定學習型態。研究綜述較支持練習測驗與分散練習；不同方法仍要依任務與回想結果調整。</p>
+          <ul>
+            <li><a href="https://pubmed.ncbi.nlm.nih.gov/26173288/" target="_blank" rel="noopener noreferrer">Dunlosky 等人：十種學習技巧的效用綜述（2013）</a></li>
+            <li><a href="https://www.nature.com/articles/s44159-022-00089-1" target="_blank" rel="noopener noreferrer">Weinstein 等人：間隔與提取練習的研究綜述（2023）</a></li>
+            <li><a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2024.1428732/full" target="_blank" rel="noopener noreferrer">Clinton-Lisell 與 Lyle：學習風格配對假說統合分析（2024）</a></li>
+          </ul>
+        </div>
+      </section>
+
+            <section class="faq section" id="faq">
         <div class="section-heading split-heading">
           <div>
             <p class="eyebrow"><span></span> 常見問題</p>
@@ -210,10 +225,10 @@
           <img src="../brand/frog-guide.png" alt="記理呱啦青蛙拿著指南" />
         </div>
         <div class="faq-list">
-          <details open><summary>我需要先知道自己的學習型態嗎？<span>＋</span></summary><p>不需要。學習型態是一個觀察自己的入口，不是固定標籤。你可以直接選一個最有感覺的方法，做完再看它是否真的幫助你回想。</p></details>
-          <details><summary>一次要練幾種方法才有效？<span>＋</span></summary><p>一次一種就夠了。用同一份小內容試 5–9 分鐘，隔一段時間再回想，比同時塞進很多技巧更容易看出效果。</p></details>
-          <details><summary>這些方法只能用來學語言嗎？<span>＋</span></summary><p>不是。單字、公式、歷史事件、工作簡報與專業概念都能套用。卡片上會標示適合的任務與建議產出。</p></details>
-          <details><summary>Jiliguala 和 Fluent AI 有什麼不同？<span>＋</span></summary><p>Jiliguala 幫你辨認自然的感官入口與記憶身份；Fluent AI 把這些原理變成可以與 AI 一起完成的短練習。兩者可以接著使用。</p></details>
+          <details open><summary>我需要先知道自己的學習型態嗎？<span>＋</span></summary><p>不需要。先選「記得住、想得懂、說得出、改得好」等當下目標即可。感官入口只是可選偏好，不是固定標籤；你可以試不同方法，再用回想結果判斷是否適合這次任務。</p></details>
+          <details><summary>一次要練幾種方法才有效？<span>＋</span></summary><p>先用一種方法處理一小份內容，再遮住提示回想、對照修正，並隔一段時間重測。多數方法約 5–9 分鐘，個別方法以卡片標示時間為準。</p></details>
+          <details><summary>這些方法只能用來學語言嗎？<span>＋</span></summary><p>不是。單字、公式、歷史事件、工作簡報與專業概念都能套用。每張卡會說明適用情境、自測方式與建議產出；遇到事實性內容，仍請對照可靠教材。</p></details>
+          <details><summary>Jiliguala 和 Fluent AI 有什麼不同？<span>＋</span></summary><p>Jiliguala 依照當下學習目標提供方法卡，感官偏好只作可選入口；Fluent AI 把部分方法變成互動練習。使用 AI 產生的資訊時，請再用可靠教材核對。</p></details>
         </div>
       </section>
 
@@ -227,7 +242,7 @@
     <footer>
       <a class="brand footer-brand" href="../"><img src="../brand/logo.png" alt="記理呱啦" /></a>
       <p>找到適合你的記法，記住最重要的自己。</p>
-      <nav aria-label="頁尾導覽"><a href="../">品牌首頁</a><a href="../courses/">課程介紹</a><a href="../testimonials/">用戶見證</a><a href="../method">找出我的記法</a><a href="https://jjfishjj.github.io/fluent-ai/practice">Fluent AI 練習</a><a href="#faq">常見問題</a></nav>
+      <nav aria-label="頁尾導覽"><a href="../">品牌首頁</a><a href="../courses/">課程介紹</a><a href="../testimonials/">用戶見證</a><a href="../methods/#finder">依目標找方法</a><a href="https://jjfishjj.github.io/fluent-ai/practice">Fluent AI 練習</a><a href="#faq">常見問題</a></nav>
       <small>© 2026 記理呱啦 Jiliguala. All rights reserved.</small>
     </footer>
 
@@ -311,7 +326,12 @@
           </div>
           <div class="leaderboard-block">
             <div class="learning-panel-title"><h3>本週排行榜</h3><span>前 5 名</span></div>
-            <ol id="weekly-leaderboard"><li class="leaderboard-empty">完成練習後加入排行。</li></ol>
+            <label class="leaderboard-opt-in"><input id="leaderboard-opt-in" type="checkbox" /> <span>自願加入本週排行榜</span></label>
+            <label class="leaderboard-name-row" id="leaderboard-name-row" hidden>排行榜顯示名稱
+              <input id="leaderboard-display-name" type="text" maxlength="24" autocomplete="off" placeholder="匿名學習者" />
+            </label>
+            <p class="leaderboard-privacy-note">加入後，登入會員可看到你的顯示名稱與本週練習次數；不會顯示 Email。預設不分享。</p>
+            <ol id="weekly-leaderboard" aria-live="polite"><li class="leaderboard-empty">排行榜預設關閉；若想分享，請勾選上方選項。</li></ol>
           </div>
         </section>
         <section class="course-progress-panel" aria-labelledby="course-progress-title">

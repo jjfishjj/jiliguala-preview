@@ -64,8 +64,19 @@ service cloud.firestore {
     }
 
     match /leaderboard/{userId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if owns(userId);
+      allow read: if request.auth != null && resource.data.optedIn == true;
+      allow create, update: if owns(userId)
+        && request.resource.data.keys().hasOnly(["optedIn", "displayName", "weeklyCount", "weekKey", "updatedAt"])
+        && request.resource.data.optedIn == true
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 24
+        && request.resource.data.weeklyCount is int
+        && request.resource.data.weeklyCount >= 0
+        && request.resource.data.weeklyCount <= 10000
+        && request.resource.data.weekKey is string
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if owns(userId);
     }
 
     match /{path=**}/practice/{methodId} {
