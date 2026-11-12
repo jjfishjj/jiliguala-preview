@@ -135,6 +135,8 @@ function methodFromForm() {
     time: Number(values("#method-time").value),
     sortOrder: Number(values("#method-order").value),
     desc: values("#method-desc").value.trim(),
+    suitableFor: values("#method-suitable").value.trim(),
+    selfTest: values("#method-self-test").value.trim(),
     tags: values("#method-tags").value.split(/[,，]/).map(value => value.trim()).filter(Boolean),
     sense: [...document.querySelectorAll('[name="sense"]:checked')].map(input => input.value),
     output: values("#method-output").value.trim(),
@@ -153,6 +155,8 @@ function fillForm(method) {
   values("#method-time").value = method.time || 7;
   values("#method-order").value = method.sortOrder ?? 100;
   values("#method-desc").value = method.desc || "";
+  values("#method-suitable").value = method.suitableFor || "";
+  values("#method-self-test").value = method.selfTest || "";
   values("#method-tags").value = (method.tags || []).join(", ");
   document.querySelectorAll('[name="sense"]').forEach(input => { input.checked = (method.sense || []).includes(input.value); });
   values("#method-output").value = method.output || "";

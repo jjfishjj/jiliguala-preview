@@ -18,7 +18,9 @@ import {
   getFirestore,
   increment,
   serverTimestamp,
-  setDoc
+  setDoc,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 import { firebaseConfig, isFirebaseConfigured } from "./firebase-config.js";
 
@@ -129,9 +131,22 @@ function readableError(error) {
   return errors[error?.code] || "目前無法完成操作，請稍後再試。";
 }
 
-function avatarContent(user) {
-  if (user.photoURL) return `<img src="${user.photoURL}" alt="" referrerpolicy="no-referrer" />`;
-  return (user.displayName || user.email || "人").trim().slice(0, 1).toUpperCase();
+function renderAvatar(target, user) {
+  target.replaceChildren();
+  if (user.photoURL) {
+    try {
+      const photo = new URL(user.photoURL);
+      if (photo.protocol === "https:") {
+        const image = document.createElement("img");
+        image.src = photo.href;
+        image.alt = "";
+        image.referrerPolicy = "no-referrer";
+        target.append(image);
+        return;
+      }
+    } catch {}
+  }
+  target.textContent = (user.displayName || user.email || "人").trim().slice(0, 1).toUpperCase();
 }
 
 function openAuth() {
@@ -207,7 +222,7 @@ function renderWeeklyChart(activity) {
   }));
 }
 
-async function renderWeeklyChallenge(user, activity, practiceCount) {
+async function renderWeeklyChallenge(user, activity, profileData = {}) {
   const start = weekStartKey();
   const weeklyCount = activity
     .filter(item => item.id >= start && item.id <= dateKey())
@@ -220,24 +235,45 @@ async function renderWeeklyChallenge(user, activity, practiceCount) {
     ? "本週挑戰完成！你已解鎖一枚週挑戰星章。"
     : `再完成 ${goal - weeklyCount} 次練習，就能完成本週挑戰。`;
 
-  const displayName = user.displayName || `學習者 ${user.uid.slice(0, 4).toUpperCase()}`;
+  const optedIn = profileData.leaderboardOptIn === true;
+  const optInControl = document.querySelector("#leaderboard-opt-in");
+  const nameInput = document.querySelector("#leaderboard-display-name");
+  const nameRow = document.querySelector("#leaderboard-name-row");
+  const list = document.querySelector("#weekly-leaderboard");
+  if (optInControl) optInControl.checked = optedIn;
+  if (nameInput) {
+    nameInput.value = optedIn ? (profileData.leaderboardDisplayName || "") : "";
+    nameInput.disabled = !optedIn;
+  }
+  if (nameRow) nameRow.hidden = !optedIn;
+  if (!optedIn) {
+    const message = document.createElement("li");
+    message.className = "leaderboard-empty";
+    message.textContent = "排行榜預設關閉；若想分享，請勾選上方選項。";
+    list.replaceChildren(message);
+    return;
+  }
+
+  const displayName = (profileData.leaderboardDisplayName || "匿名學習者").trim().slice(0, 24) || "匿名學習者";
   try {
     await setDoc(doc(db, "leaderboard", user.uid), {
+      optedIn: true,
       displayName,
       weeklyCount,
-      totalPracticeCount: practiceCount,
       weekKey: start,
       updatedAt: serverTimestamp()
-    }, { merge: true });
-    const snapshot = await getDocs(collection(db, "leaderboard"));
+    });
+    const snapshot = await getDocs(query(collection(db, "leaderboard"), where("optedIn", "==", true)));
     const ranking = snapshot.docs
       .map(item => ({ id: item.id, ...item.data() }))
       .filter(item => item.weekKey === start && item.weeklyCount > 0)
-      .sort((a, b) => b.weeklyCount - a.weeklyCount || b.totalPracticeCount - a.totalPracticeCount)
+      .sort((a, b) => b.weeklyCount - a.weeklyCount || a.displayName.localeCompare(b.displayName, "zh-Hant"))
       .slice(0, 5);
-    const list = document.querySelector("#weekly-leaderboard");
     if (!ranking.length) {
-      list.innerHTML = '<li class="leaderboard-empty">完成練習後加入排行。</li>';
+      const empty = document.createElement("li");
+      empty.className = "leaderboard-empty";
+      empty.textContent = "本週還沒有已分享的排行資料。";
+      list.replaceChildren(empty);
       return;
     }
     list.replaceChildren(...ranking.map(item => {
@@ -251,7 +287,28 @@ async function renderWeeklyChallenge(user, activity, practiceCount) {
       return row;
     }));
   } catch {
-    document.querySelector("#weekly-leaderboard").innerHTML = '<li class="leaderboard-empty">排行榜稍後再試。</li>';
+    const error = document.createElement("li");
+    error.className = "leaderboard-empty";
+    error.textContent = "排行榜資料暫時無法讀取。";
+    list.replaceChildren(error);
+  }
+}
+
+async function saveLeaderboardPreferences() {
+  if (!currentUser || !db) return;
+  const optedIn = document.querySelector("#leaderboard-opt-in").checked;
+  const enteredName = document.querySelector("#leaderboard-display-name").value.trim().slice(0, 24);
+  const displayName = enteredName || "匿名學習者";
+  try {
+    if (!optedIn) await deleteDoc(doc(db, "leaderboard", currentUser.uid));
+    await setDoc(doc(db, "users", currentUser.uid), {
+      leaderboardOptIn: optedIn,
+      leaderboardDisplayName: optedIn ? displayName : ""
+    }, { merge: true });
+    await loadMemberData(currentUser);
+    showToast(optedIn ? "已加入排行榜；顯示名稱與本週次數會供登入會員查看。" : "已退出排行榜，不再分享你的排行資料。");
+  } catch {
+    showToast("排行榜設定儲存失敗，請稍後再試。");
   }
 }
 
@@ -288,12 +345,17 @@ function renderDailyTask(daily, method) {
   const panel = document.querySelector(".daily-task");
   const action = document.querySelector("#daily-task-action");
   const complete = Boolean(daily?.completed);
+  const isReview = Boolean(daily?.isReview);
   panel.classList.toggle("complete", complete);
-  document.querySelector("#daily-task-title").textContent = complete ? `已完成：${method.title}` : method.title;
+  document.querySelector("#daily-task-title").textContent = complete
+    ? `${isReview ? "已完成重測" : "已完成"}：${method.title}`
+    : `${isReview ? "到期重測" : "今日方法"}：${method.title}`;
   document.querySelector("#daily-task-description").textContent = complete
-    ? `今天已完成 ${daily.completedCount || 1} 次練習，明天會有新的推薦。`
-    : `${method.desc}，大約 ${method.time} 分鐘可以開始。`;
-  action.textContent = complete ? "再練一次 →" : "開始今日任務 →";
+    ? `今天已完成 ${daily.completedCount || 1} 次練習；下一次重測會依你選的間隔到期。`
+    : isReview
+      ? `這張卡已到重測時間。先遮住提示回想，再對照修正。`
+      : `${method.desc}，約 ${method.time} 分鐘；完成後可安排重測。`;
+  action.textContent = complete ? "再練一次 →" : isReview ? "開始重測 →" : "開始今日任務 →";
   action.dataset.methodId = method.id;
 }
 
@@ -418,8 +480,13 @@ async function loadMemberData(user) {
   const notes = notesSnapshot.docs.map(item => ({ id: item.id, data: item.data() }))
     .sort((a, b) => timestampValue(b.data.updatedAt) - timestampValue(a.data.updatedAt));
   const activity = activitySnapshot.docs.map(item => ({ id: item.id, data: item.data() }));
-  const daily = dailySnapshot.data();
-  if (daily?.methodId) currentDailyMethod = catalog().find(method => method.id === daily.methodId) || currentDailyMethod;
+  let daily = dailySnapshot.data();
+  const dueReview = practice
+    .filter(item => typeof item.data.nextReviewDate === "string" && item.data.nextReviewDate <= today)
+    .sort((a, b) => a.data.nextReviewDate.localeCompare(b.data.nextReviewDate) || timestampValue(a.data.lastCompletedAt) - timestampValue(b.data.lastCompletedAt))[0];
+  const dueReviewMethod = dueReview ? catalog().find(method => method.id === dueReview.id) : null;
+  if (dueReviewMethod) currentDailyMethod = dueReviewMethod;
+  else if (daily?.methodId) currentDailyMethod = catalog().find(method => method.id === daily.methodId) || currentDailyMethod;
   const practiceCount = profile.data()?.practiceCount || 0;
   const progress = Math.min(100, Math.round((practice.length / Math.max(1, catalog().length)) * 100));
 
@@ -439,22 +506,31 @@ async function loadMemberData(user) {
 
   renderLearningList("#favorite-list", favoriteItems, "還沒有收藏的方法。", data => `收藏於 ${dateLabel(data.savedAt)}`);
   renderLearningList("#later-list", later, "還沒有待練習的方法。", data => `${data.categoryLabel || "學習方法"} · 加入 ${dateLabel(data.savedAt)}`);
-  renderLearningList("#recent-practice-list", practice, "完成方法後會顯示在這裡。", data => `${data.count || 0} 次 · 最近 ${dateLabel(data.lastCompletedAt)}`);
+  renderLearningList("#recent-practice-list", practice, "完成方法後會顯示在這裡。", data => {
+    const review = data.nextReviewDate
+      ? (data.nextReviewDate <= dateKey() ? "今日待重測" : `下次重測 ${data.nextReviewDate}`)
+      : "尚未安排重測";
+    return `${data.count || 0} 次 · 最近 ${dateLabel(data.lastCompletedAt)} · ${review}`;
+  });
   renderLearningList("#notes-list", notes, "你的方法筆記會顯示在這裡。", data => data.content || "空白筆記");
   renderWeeklyChart(activity);
-  await renderWeeklyChallenge(user, activity, practiceCount);
+  await renderWeeklyChallenge(user, activity, profile.data() || {});
   renderCategoryProgress(practice);
   renderMemberLevel(practiceCount, practice.length, profile.data()?.streak || 0);
   renderBadges({ practiceCount, uniqueCount: practice.length, streak: profile.data()?.streak || 0, favorites: favorites.length, notes: notes.length, practice });
   renderCourseProgress(practice);
   if (currentDailyMethod) {
-    if (!dailySnapshot.exists()) {
-      await setDoc(doc(db, "users", user.uid, "daily", today), {
+    const needsReviewAssignment = dueReviewMethod && (daily?.methodId !== dueReviewMethod.id || daily?.isReview !== true);
+    if (!dailySnapshot.exists() || needsReviewAssignment) {
+      daily = {
         methodId: currentDailyMethod.id,
         title: currentDailyMethod.title,
         assignedAt: serverTimestamp(),
-        completed: false
-      });
+        completed: false,
+        isReview: Boolean(dueReviewMethod),
+        reviewDate: dueReview?.data.nextReviewDate || null
+      };
+      await setDoc(doc(db, "users", user.uid, "daily", today), daily, { merge: true });
     }
     renderDailyTask(daily || { completed: false }, currentDailyMethod);
   }
@@ -474,8 +550,8 @@ function renderUser(user) {
   }
   const name = user.displayName || user.email?.split("@")[0] || "學習者";
   authButtonLabel.textContent = name;
-  accountAvatar.innerHTML = avatarContent(user);
-  document.querySelector("#member-avatar").innerHTML = avatarContent(user);
+  renderAvatar(accountAvatar, user);
+  renderAvatar(document.querySelector("#member-avatar"), user);
   document.querySelector("#member-name").textContent = name;
   document.querySelector("#member-email").textContent = user.email || "";
 }
@@ -502,6 +578,10 @@ if (isFirebaseConfigured) {
   const app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  document.querySelector("#leaderboard-opt-in").addEventListener("change", saveLeaderboardPreferences);
+  document.querySelector("#leaderboard-display-name").addEventListener("change", () => {
+    if (document.querySelector("#leaderboard-opt-in").checked) saveLeaderboardPreferences();
+  });
   loadPublishedCatalog().catch(() => {});
   loadPublishedCourses().catch(() => {});
 
@@ -576,9 +656,11 @@ window.addEventListener("jiliguala:favorite", async event => {
 
 window.addEventListener("jiliguala:practice", async event => {
   if (!currentUser) { document.querySelector("#method-dialog")?.close(); openAuth(); return; }
-  const method = event.detail;
+  const { method, recallRating, reviewIntervalDays } = event.detail;
   try {
     const today = dateKey();
+    const intervalDays = [1, 3, 7].includes(Number(reviewIntervalDays)) ? Number(reviewIntervalDays) : 1;
+    const nextReviewDate = dayOffset(today, intervalDays);
     const profileRef = doc(db, "users", currentUser.uid);
     const profile = await getDoc(profileRef);
     const previousDate = profile.data()?.lastPracticeDate;
@@ -590,7 +672,10 @@ window.addEventListener("jiliguala:practice", async event => {
       title: method.title,
       category: method.category,
       count: increment(1),
-      lastCompletedAt: serverTimestamp()
+      lastCompletedAt: serverTimestamp(),
+      lastSelfRating: ["remembered", "partial", "not-yet"].includes(recallRating) ? recallRating : "not-yet",
+      reviewIntervalDays: intervalDays,
+      nextReviewDate
     }, { merge: true });
     await Promise.all([
       setDoc(profileRef, { practiceCount: increment(1), streak: nextStreak, lastPracticeDate: today }, { merge: true }),
@@ -606,7 +691,7 @@ window.addEventListener("jiliguala:practice", async event => {
     await deleteDoc(doc(db, "users", currentUser.uid, "later", method.id));
     document.querySelector("#method-dialog")?.close();
     await loadMemberData(currentUser);
-    showToast(`完成「${method.title}」一次！`);
+    showToast(`完成「${method.title}」；已安排 ${intervalDays} 天後重測。`);
   } catch { showToast("練習紀錄同步失敗，請稍後再試。"); }
 });
 
