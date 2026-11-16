@@ -35,6 +35,39 @@
             <button class="secondary" id="logout" type="button">登出</button>
           </div>
         </div>
+        <section class="media-admin" aria-labelledby="media-title">
+          <div class="library-head"><div><small>MEDIA LIBRARY</small><h2 id="media-title">網站圖片</h2></div><span>PNG / JPG / WebP · 每張不超過 5 MB</span></div>
+          <div class="media-grid">
+            <article class="media-card">
+              <div><h3>首頁主視覺</h3><p>上傳後會取代首頁右側圖片；沒有上傳圖片時仍使用目前預設圖。</p></div>
+              <div class="media-preview hero-media-preview"><img id="hero-image-preview" src="../brand/hero-frog.png" alt="首頁主視覺預覽" /></div>
+              <label>選擇新圖片<input id="hero-image-file" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+              <div class="media-actions"><button class="primary" id="upload-hero-image" type="button">上傳並取代</button><button class="secondary" id="remove-hero-image" type="button">移除上傳圖片</button></div>
+              <progress class="media-progress" id="hero-upload-progress" max="100" value="0"></progress>
+              <p class="message" id="hero-media-status" role="status" aria-live="polite"></p>
+            </article>
+            <article class="media-card">
+              <div><h3>方法圖鑑配圖</h3><p>為選定方法上傳或替換封面圖；移除圖片不會刪除方法。</p></div>
+              <label>選擇方法<select id="media-method-select"><option value="">正在載入方法…</option></select></label>
+              <div class="media-preview" id="method-image-preview"><span>選擇一種方法查看圖片</span></div>
+              <label>選擇新圖片<input id="method-image-file" type="file" accept="image/jpeg,image/png,image/webp" /></label>
+              <div class="media-actions"><button class="primary" id="upload-method-image" type="button">上傳並取代</button><button class="secondary" id="remove-method-image" type="button">移除圖片</button></div>
+              <progress class="media-progress" id="method-upload-progress" max="100" value="0"></progress>
+              <p class="message" id="method-media-status" role="status" aria-live="polite"></p>
+            </article>
+          </div>
+        </section>
+        <section class="manager-admin" aria-labelledby="managers-title">
+          <div class="library-head"><div><small>ACCESS CONTROL</small><h2 id="managers-title">管理員</h2></div><span id="manager-total">0 位</span></div>
+          <p class="manager-note">僅指派已建立 Firebase 帳號的管理者，不會寄送邀請。請填入對方的 Firebase UID 與 Email。</p>
+          <form class="manager-form" id="manager-form">
+            <label>Firebase UID<input id="manager-uid" autocomplete="off" maxlength="128" pattern="[A-Za-z0-9:_-]+" required /></label>
+            <label>Email<input id="manager-email" type="email" autocomplete="off" maxlength="254" required /></label>
+            <button class="primary" type="submit">授予管理權</button>
+          </form>
+          <div class="manager-list" id="manager-list"><p class="empty">正在載入管理員…</p></div>
+          <p class="message" id="manager-status" role="status" aria-live="polite"></p>
+        </section>
         <div class="workspace">
           <form class="method-form" id="method-form">
             <div class="form-title"><h2 id="form-heading">新增方法</h2><button class="text-button" id="reset-form" type="button">清空</button></div>
@@ -96,5 +129,6 @@
     </main>
     <script src="../methods/course-catalog.js"></script>
     <script type="module" src="./app.js"></script>
+    <script type="module" src="./media-admin.js"></script>
   </body>
 </html>

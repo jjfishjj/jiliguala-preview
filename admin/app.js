@@ -244,6 +244,8 @@ async function loadContent() {
   renderMethods();
   renderCourseMethodOptions();
   renderCourses();
+  window.JILIGUALA_ADMIN_METHODS = methods;
+  window.dispatchEvent(new CustomEvent("jiliguala:admin-methods-loaded", { detail: methods }));
 }
 
 function renderCourseMethodOptions() {

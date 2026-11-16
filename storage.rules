@@ -1,0 +1,31 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'guocheju@gmail.com' ||
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isAllowedImageOrDelete() {
+      return request.resource == null || (
+        request.resource.size <= 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/(jpeg|png|webp)')
+      );
+    }
+
+    match /site-images/homepage/hero {
+      allow read: if true;
+      allow write: if isAdmin() && isAllowedImageOrDelete();
+    }
+
+    match /site-images/methods/{methodId}/cover {
+      allow read: if true;
+      allow write: if isAdmin() &&
+        methodId.matches('^[a-z0-9-]{1,80}$') &&
+        isAllowedImageOrDelete();
+    }
+  }
+}
