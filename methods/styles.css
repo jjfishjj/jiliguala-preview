@@ -464,3 +464,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @media (max-width: 680px) {
   .goal-card { min-height: 165px; padding: 17px; }
 }
+
+.method-card-image { width:100%; margin:16px 0 0; overflow:hidden; aspect-ratio:4 / 3; background:#edf3e8; }
+.method-card-image img { display:block; width:100%; height:100%; object-fit:cover; }

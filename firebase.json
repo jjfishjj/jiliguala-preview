@@ -12,6 +12,9 @@
       }
     }
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "firestore": {
     "database": "(default)",
     "location": "asia-east1",

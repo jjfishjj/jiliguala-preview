@@ -48,6 +48,13 @@ function escapeHtml(value) {
   })[character]);
 }
 
+function safeImageUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname === "firebasestorage.googleapis.com" ? url.href : "";
+  } catch { return ""; }
+}
+
 function card(method) {
   const courseNames = coursesForMethod(method.id).map(course => escapeHtml(course.title));
   const id = escapeHtml(method.id);
@@ -55,8 +62,10 @@ function card(method) {
   const category = escapeHtml(categoryNames[method.category] || "學習方法");
   const favorite = favoriteIds.has(method.id);
   const tags = (method.tags || []).map(tag => `<span>${escapeHtml(tag)}</span>`).join("");
+  const imageUrl = safeImageUrl(method.imageUrl);
   return `<article class="method-card">
     <div class="method-meta"><span class="category-pill">${category}</span><span class="method-card-actions"><span class="method-time">約 ${escapeHtml(method.time)} 分鐘</span><button class="favorite-button${favorite ? " active" : ""}" data-favorite="${id}" type="button" aria-label="${favorite ? "取消收藏" : "收藏"}${title}" aria-pressed="${favorite}">${favorite ? "♥" : "♡"}</button></span></div>
+    ${imageUrl ? `<div class="method-card-image"><img src="${escapeHtml(imageUrl)}" alt="${title} 方法配圖" loading="lazy" decoding="async" /></div>` : ""}
     <h3>${title}</h3>
     <p>${escapeHtml(method.desc)}</p>
     <p class="method-suitable"><strong>適合：</strong>${escapeHtml(method.suitableFor || "依照當下任務試做，再用回想檢查效果。")}</p>
